@@ -22,7 +22,13 @@ pip install -r requirements.txt
 To train a model, use the following command:
 
 ```bash
-python train.py --config config.yaml
+python train.py --config config.yaml --model_type LSTM
+```
+
+To train the hybrid model, use:
+
+```bash
+python atten_train.py --config config.yaml --model_type Hybrid
 ```
 
 ## Models

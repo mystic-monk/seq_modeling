@@ -76,11 +76,13 @@ class LSTMRegressor(L.LightningModule):
         """
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
 
-        scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)
+        # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)
+        scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10)
 
         return {
             "optimizer": optimizer,
             "lr_scheduler": scheduler,
+            "monitor": "val_loss",
         }
 
     def training_step(self, batch, batch_idx):

@@ -20,7 +20,7 @@ class CSVLoggerCallback(Callback):
         """
         metrics = trainer.callback_metrics
         epoch = trainer.current_epoch
-        train_loss = metrics.get("train_loss_epoch", None)
+        train_loss = metrics.get("train_loss", None)
         val_loss = metrics.get("val_loss", None)
         val_mae = metrics.get("val_mae", None)
 
@@ -46,7 +46,7 @@ class PrintingCallback(Callback):
 early_stop_callback = EarlyStopping(
     monitor="val_loss",  # Monitor validation loss
     min_delta=0.001,  # Small delta to avoid early stopping on minor fluctuations
-    patience=3,  # Stop after 3 epochs of no improvement
+    patience=10,  # Stop after 3 epochs of no improvement
     verbose=False,
     mode="min",  # Minimize validation loss
 )

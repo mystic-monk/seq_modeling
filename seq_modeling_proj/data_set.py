@@ -101,6 +101,10 @@ class LineListingDataModule(L.LightningDataModule):
         y = X["diff_log_14d"].shift(-1).ffill()
         y = y.dropna()
 
+        if X.empty or y.empty:
+            logger.error("Data after preprocessing is empty.")
+            raise ValueError("Data after preprocessing is empty.")
+
         self.columns = X.columns
 
         X_cv, X_test, y_cv, y_test = train_test_split(
