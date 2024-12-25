@@ -1,7 +1,7 @@
 # train.py
 from data_set import LineListingDataModule
 from lightning import Trainer
-from base_model import LSTMRegressor
+from model import LSTMRegressor
 import optuna
 from config import p, tensorboard_logger, validate_params, csv_logger 
 from callbacks import PrintingCallback, early_stop_callback, checkpoint_callback, CSVLoggerCallback

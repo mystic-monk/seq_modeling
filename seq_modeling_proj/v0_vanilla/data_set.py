@@ -31,10 +31,16 @@ class TimeseriesDataset(Dataset):
         self.output_size = output_size
 
     def __len__(self):
+        # return self.X.__len__() - (self.seq_len - 1)
+        # return len(self.X) - self.seq_len + 1
         return max(0, len(self.X) - self.seq_len + 1)
 
     def __getitem__(self, index):
         dx = self.X[index : index + self.seq_len], self.y[index + self.seq_len - 1]
+
+        # dx = self.y[index + self.seq_len:index + self.seq_len + self.output_size]
+        # print(f"X: {dx[0].shape}")
+        # print(f"Y: {dx[1]}")
         return dx
 
 
@@ -59,17 +65,18 @@ class LineListingDataModule(L.LightningDataModule):
         self.X_test = None
         self.columns = None
         self.preprocessing = None
+        # self.data_path = "../data/transformed/influenza_all_seasons.parquet"
         self.data_path = "../data/transformed/influenza_features.parquet"
 
     def prepare_data(self):
         pass
     
     def load_and_preprocess_data(self):
-        data = pd.read_parquet(self.data_path, columns=["event_creation_date", "log_cases_14d_moving_avg", "cases_14d_moving_avg","diff_log_14d"])
+        data = pd.read_parquet(self.data_path, columns=["event_creation_date", "cases_reported"])
         data['event_creation_date'] = pd.to_datetime(data['event_creation_date'])
         data.set_index('event_creation_date', inplace=True)
-        X = data[["log_cases_14d_moving_avg", "cases_14d_moving_avg", "diff_log_14d"]].copy()  # Ensure the correct columns are included
-        y = X["diff_log_14d"].shift(-1).ffill().dropna()
+        X = data[["cases_reported", "diff_log_14d"]].copy()
+        y = X["cases_reported"].shift(-1).ffill().dropna()
         return X, y
 
     def setup(self, stage=None):
@@ -87,6 +94,24 @@ class LineListingDataModule(L.LightningDataModule):
             return
 
         X, y = self.load_and_preprocess_data()
+        # data = pd.read_parquet(self.data_path, columns=["event_creation_date", "log_cases_14d_moving_avg", "outlier"])
+        # data = pd.read_parquet(self.data_path, columns=["event_creation_date", "diff_log_14d"])
+
+        #    # Check if data is loaded correctly
+        # if data is None or data.empty:
+        #     logger.error("Data loading failed. The dataframe is empty or None.")
+        #     raise ValueError("Data loading failed.")
+
+        # # data.index = pd.to_datetime(data.index)
+        # data['event_creation_date'] = pd.to_datetime(data['event_creation_date'])
+        # data.set_index('event_creation_date', inplace=True)
+        # df_resample = data.copy()
+      
+        # # X = df_resample.dropna().copy()
+        # # X = df_resample[["log_cases_14d_moving_avg", "outlier"]].copy()
+        # X = df_resample[["diff_log_14d"]].copy()
+        # y = X["diff_log_14d"].shift(-1).ffill()
+        # y = y.dropna()
 
         X_cv, X_test, y_cv, y_test = train_test_split(
             X, y, test_size=0.2, shuffle=False
@@ -124,6 +149,17 @@ class LineListingDataModule(L.LightningDataModule):
         self.X_val = preprocessing.transform(X.iloc[val_idx])
         self.y_val = y.iloc[val_idx].values.reshape((-1, 1))
 
+    # def get_dataset(self):
+    #     """
+    #     Returns the dataset for KFold splitting.
+    #     """
+    #     data = pd.read_parquet(self.data_path, columns=["event_creation_date", "diff_log_14d"])
+    #     data['event_creation_date'] = pd.to_datetime(data['event_creation_date'])
+    #     data.set_index('event_creation_date', inplace=True)
+    #     df_resample = data.copy()
+    #     X = df_resample[["diff_log_14d"]].copy()
+    #     y = X["diff_log_14d"].shift(-1).ffill().dropna()
+    #     return X, y
 
     def train_dataloader(self):
         print("Train Dataloader is called.")
@@ -148,6 +184,7 @@ class LineListingDataModule(L.LightningDataModule):
             batch_size=self.batch_size,
             shuffle=False,
             num_workers=self.num_workers,
+            #persistent_workers=True
         )
 
         return val_loader

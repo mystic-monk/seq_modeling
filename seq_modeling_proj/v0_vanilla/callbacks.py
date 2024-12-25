@@ -10,7 +10,7 @@ class CSVLoggerCallback(Callback):
     def __init__(self, log_file="metrics.csv", metrics_to_log=None):
         super().__init__()
         self.log_file = log_file
-        self.metrics_to_log = metrics_to_log or ["epoch", "train_loss", "val_loss", "val_mae", "train_residuals", "val_residuals"]
+        self.metrics_to_log = metrics_to_log or ["epoch", "train_loss", "val_loss", "val_mae"]
         with open(self.log_file, mode="w", newline="") as file:
             writer = csv.writer(file)
             writer.writerow(self.metrics_to_log)  # Define headers
@@ -20,7 +20,7 @@ class CSVLoggerCallback(Callback):
         Logs metrics at the end of each validation step.
         """
         metrics = trainer.callback_metrics
-
+        # epoch = trainer.current_epoch
         log_data = [trainer.current_epoch]  
 
         # Collect specified metrics
@@ -34,6 +34,13 @@ class CSVLoggerCallback(Callback):
                 writer.writerow(log_data)
         except IOError as e:
             print(f"Error writing to log file {self.log_file}: {e}")
+        # train_loss = metrics.get("train_loss", None)
+        # val_loss = metrics.get("val_loss", None)
+        # val_mae = metrics.get("val_mae", None)
+
+        # with open(self.log_file, mode="a", newline="") as file:
+        #     writer = csv.writer(file)
+        #     writer.writerow([epoch, train_loss, val_loss, val_mae])
 
 
 class PrintingCallback(Callback):

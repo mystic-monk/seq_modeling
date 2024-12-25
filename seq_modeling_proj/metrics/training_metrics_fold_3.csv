@@ -1,0 +1,3 @@
+epoch,train_loss,val_loss,val_mae,train_residuals,val_residuals
+0,,tensor(0.0161),tensor(0.1268),,
+0,tensor(1.8147),tensor(0.0779),tensor(0.0495),,

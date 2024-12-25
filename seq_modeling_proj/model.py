@@ -3,9 +3,7 @@ import lightning as L
 import torch
 from torch import nn
 
-from torchmetrics.regression import MeanAbsoluteError, MeanSquaredError, R2Score
-
-
+from torchmetrics.regression import MeanAbsoluteError, MeanSquaredError, R2Score, MeanAbsolutePercentageError
 
 class LSTMRegressor(L.LightningModule):
     """
@@ -23,7 +21,7 @@ class LSTMRegressor(L.LightningModule):
         dropout: float,
         learning_rate: float,
         criterion: nn.Module,
-        output_size: int =1,
+        output_size: int,
         **kwargs,
     ):
         super(LSTMRegressor, self).__init__()
@@ -39,6 +37,7 @@ class LSTMRegressor(L.LightningModule):
         self.mae = MeanAbsoluteError()
         self.mse = MeanSquaredError()
         self.r2 = R2Score()
+        self.mape = MeanAbsolutePercentageError()
 
         # LSTM layer
         self.lstm = nn.LSTM(
@@ -50,23 +49,27 @@ class LSTMRegressor(L.LightningModule):
             bidirectional=False,
         )
 
-        # fully connected layer/ Dense Layer
+        # Fully connected layer
         self.fc = nn.Linear(hidden_size, output_size)
 
-
-    def forward(self, x):
+    def forward(self, x, h0=None, c0=None):
         """
-        Forward pass of the LSTM model.
+        Forward pass of the LSTM model with hidden and cell states.
         Args:
             x (torch.Tensor): Input tensor of shape (batch_size, seq_len, n_features).
+            h0 (torch.Tensor): Initial hidden state (optional).
+            c0 (torch.Tensor): Initial cell state (optional).
         Returns:
             torch.Tensor: Predicted output of shape (batch_size, output_size).
+            tuple: Updated hidden and cell states (ht, ct).
         """
-        lstm_out, _ = self.lstm(x)
+        if h0 is None or c0 is None:
+            h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
+            c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
 
+        lstm_out, (ht, ct) = self.lstm(x, (h0, c0))
         y_pred = self.fc(lstm_out[:, -1])
-
-        return y_pred
+        return y_pred, (ht, ct)
 
     def configure_optimizers(self):
         """
@@ -75,17 +78,14 @@ class LSTMRegressor(L.LightningModule):
             dict: Optimizer and scheduler configuration.
         """
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
-
-        # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10)
-
         return {
             "optimizer": optimizer,
             "lr_scheduler": scheduler,
             "monitor": "val_loss",
         }
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch, batch_idx, h0=None, c0=None):
         """
         Training step logic.
         Args:
@@ -95,12 +95,33 @@ class LSTMRegressor(L.LightningModule):
             torch.Tensor: Training loss.
         """
         x, y = batch
-        y_hat = self.forward(x)
+        
+        # Initialize hidden and cell states if not provided
+        if h0 is None or c0 is None:
+            h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
+            c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(x.device)
+
+        y_hat, (ht, ct) = self.forward(x, h0, c0)  # Forward pass with states
+
+        # Compute the loss
         loss = self.criterion(y_hat, y)
-        self.log("train_loss", loss, on_step=False, on_epoch=True)
+
+        # Calculate residuals
+        residuals = y - y_hat
+
+        # Log mean of residuals
+        self.log("train_residuals_mean", residuals.mean(), on_step=True, on_epoch=True)
+
+        # Return the updated states for the next batch (do not store in self directly)
+        self.h0, self.c0 = ht, ct  # Update internal states
+        
+        # Log the loss
+        self.log("train_loss", loss, on_step=True, on_epoch=True)
+        
+        # Return only the loss
         return loss
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, batch, batch_idx, h0=None, c0=None):
         """
         Validation step logic.
         Args:
@@ -110,14 +131,21 @@ class LSTMRegressor(L.LightningModule):
             torch.Tensor: Validation loss.
         """
         x, y = batch
-        y_hat = self.forward(x)
+        y_hat, (ht, ct) = self.forward(x, h0, c0)
         loss = self.criterion(y_hat, y)
+        
+        # Calculate residuals
+        residuals = y - y_hat
+
+        # Log mean of residuals
+        self.log("val_residuals_mean", residuals.mean(), on_step=False, on_epoch=True)
         
         # Calculate additional metrics
         val_mae = self.mae(y_hat, y)
         val_mse = self.mse(y_hat, y)
         val_rmse = torch.sqrt(val_mse)  
-        val_r2 = self.r2(y_hat, y)
+        val_r2 = self.r2(y_hat, y) if y.numel() > 1 else torch.tensor(float('nan'))
+        val_mape = self.mape(y_hat, y)
 
         # log metrics
         self.log("val_loss", loss, on_step=False, on_epoch=True)
@@ -125,6 +153,7 @@ class LSTMRegressor(L.LightningModule):
         self.log("val_mse", val_mse, on_step=False, on_epoch=True)
         self.log("val_rmse", val_rmse, on_step=False, on_epoch=True)
         self.log("val_r2", val_r2, on_step=False, on_epoch=True)
+        self.log("val_mape", val_mape, on_step=False, on_epoch=True)
 
         return loss
 
@@ -138,14 +167,21 @@ class LSTMRegressor(L.LightningModule):
             torch.Tensor: Test loss.
         """
         x, y = batch
-        y_hat = self.forward(x)
+        y_hat, (ht, ct) = self.forward(x)
         loss = self.criterion(y_hat, y)
+
+        # Calculate residuals
+        residuals = y - y_hat
+
+        # Log mean of residuals
+        self.log("test_residuals_mean", residuals.mean(), on_step=False, on_epoch=True)
 
         # Calculate additional metrics
         test_mae = self.mae(y_hat, y)
         test_mse = self.mse(y_hat, y)
         test_rmse = torch.sqrt(test_mse) 
-        test_r2 = self.r2(y_hat, y)
+        test_r2 = self.r2(y_hat, y) if y.numel() > 1 else torch.tensor(float('nan'))
+        test_mape = self.mape(y_hat, y)
 
         # Log metrics
         self.log("test_loss", loss, on_step=False, on_epoch=True)
@@ -153,6 +189,7 @@ class LSTMRegressor(L.LightningModule):
         self.log("test_mse", test_mse, on_step=False, on_epoch=True)
         self.log("test_rmse", test_rmse, on_step=False, on_epoch=True)
         self.log("test_r2", test_r2, on_step=False, on_epoch=True)
+        self.log("test_mape", test_mape, on_step=False, on_epoch=True)
 
         return loss
 
@@ -168,6 +205,5 @@ class LSTMRegressor(L.LightningModule):
         """
         print("Running predict_step.")
         x, _ = batch
-        y_pred = self.forward(x)
-        
+        y_pred, _ = self.forward(x)
         return y_pred
