@@ -2,9 +2,14 @@ import os
 import torch
 import numpy as np
 import pandas as pd
+import logging
 from model import LSTMRegressor
 from config import p
-from config_predict import last_date, checkpoint_path, output_csv, prediction_days
+from config_predict import last_date, checkpoint_path, output_csv, prediction_days, input_path
+
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def load_model(checkpoint_path: str, config: dict):
     """
@@ -22,9 +27,11 @@ def load_model(checkpoint_path: str, config: dict):
         dropout=config["dropout"],
         learning_rate=config["learning_rate"],
         criterion=config["criterion"],
+        batch_size=p["batch_size"],
         output_size=config["output_size"],
     )
-    model.load_state_dict(torch.load(checkpoint_path, map_location=torch.device("cpu"), weights_only=True)["state_dict"])
+    checkpoint = torch.load(checkpoint_path, map_location=torch.device("cpu"), weights_only=True)
+    model.load_state_dict(checkpoint["state_dict"])
     model.eval()  # Set the model to evaluation mode
     return model
 
@@ -38,60 +45,61 @@ def preprocess_input_data(raw_data: pd.DataFrame, seq_len: int) -> torch.Tensor:
         torch.Tensor: Preprocessed input data tensor.
     """
     data = raw_data.values
-    sequences = []
-    for i in range(len(data) - seq_len + 1):
-        sequences.append(data[i:i + seq_len])
-    input_tensor = torch.tensor(sequences, dtype=torch.float32)
+    sequences = [data[i:i + seq_len] for i in range(len(data) - seq_len + 1)]
+    input_tensor = torch.tensor(np.array(sequences), dtype=torch.float32)
     return input_tensor
 
-def predict(model, input_data: torch.Tensor, prediction_days: int):
+def predict(model, input_data: torch.Tensor):
     """
     Generate predictions using the trained model.
     Args:
         model (torch.nn.Module): Trained LSTM model.
         input_data (torch.Tensor): Input data tensor of shape (batch_size, seq_len, n_features).
-        prediction_days (int): Number of days to predict.
     Returns:
         torch.Tensor: Model predictions.
     """
-    predictions = []
     with torch.no_grad():
-        for _ in range(prediction_days):
-            pred = model(input_data)
-            predictions.append(pred)
-            # Update input_data with the new prediction
-            input_data = torch.cat((input_data[:, 1:, :], pred.unsqueeze(1)), dim=1)
-    return torch.cat(predictions, dim=0)
+        pred, _ = model(input_data)
+    return pred
 
 def main():
     """
     Main function to load the model, preprocess input data, and make predictions.
     """
-    # Ensure the predictions directory exists
-    os.makedirs(os.path.dirname(output_csv), exist_ok=True)
+    try:
+        # Ensure the predictions directory exists
+        os.makedirs(os.path.dirname(output_csv), exist_ok=True)
 
-    print("Loading model...")
-    model = load_model(checkpoint_path, p)
+        logger.info("Loading model...")
+        model = load_model(checkpoint_path, p)
 
-    print("Generating predictions...")
-    # Create an initial input tensor with zeros (or any other initial value)
-    initial_input = torch.zeros((1, p["seq_len"], p["n_features"]))
+        logger.info("Loading and preprocessing input data...")
+        raw_data = pd.read_parquet(input_path, columns=["log_cases_14d_moving_avg", "cases_14d_moving_avg", "diff_log_14d"])
+        raw_data = raw_data.set_index(pd.to_datetime(raw_data.index))
+        raw_data = raw_data.sort_index()
 
-    predictions = predict(model, initial_input, prediction_days)
+        # Extract the last seq_len rows to create the initial input
+        initial_input_data = raw_data.iloc[-p["seq_len"]:]
+        initial_input = torch.tensor(np.array(initial_input_data), dtype=torch.float32).unsqueeze(0)  # Add batch dimension
 
-    # Generate a sequence of dates for the predictions
-    last_date_dt = pd.to_datetime(last_date)
-    prediction_dates = pd.date_range(start=last_date_dt, periods=prediction_days)
+        logger.info("Generating predictions...")
+        predictions = predict(model, initial_input)
 
-    print("Saving predictions...")
-    # Save predictions to a CSV file
-    predictions_df = pd.DataFrame({
-        "date": prediction_dates,
-        "prediction": predictions.numpy().flatten()
-    })
-    predictions_df.to_csv(output_csv, index=False)
+        # Generate a sequence of dates for the predictions
+        last_date_dt = pd.to_datetime(last_date)
+        prediction_dates = pd.date_range(start=last_date_dt, periods=p["output_size"])
 
-    print(f"Predictions saved to {output_csv}")
+        logger.info("Saving predictions...")
+        # Save predictions to a CSV file
+        predictions_df = pd.DataFrame({
+            "date": prediction_dates,
+            "prediction": predictions.numpy().flatten()
+        })
+        predictions_df.to_csv(output_csv, index=False)
+
+        logger.info(f"Predictions saved to {output_csv}")
+    except Exception as e:
+        logger.error(f"An error occurred: {e}")
 
 if __name__ == "__main__":
     main()

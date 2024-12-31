@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/dev/Python/seq_modeling/seq_modeling_proj/mlruns/0/ea5034b13b25431ca9818c57a4e1740c/artifacts
+end_time: 1735589337913
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: ea5034b13b25431ca9818c57a4e1740c
+run_name: test_run_2024-12-30_20-08-05
+run_uuid: ea5034b13b25431ca9818c57a4e1740c
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1735589286316
+status: 3
+tags: []
+user_id: ankush.arya

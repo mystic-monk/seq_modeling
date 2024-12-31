@@ -1,53 +1,78 @@
 # train.py
 import os
+import mlflow
+import mlflow.pytorch
+from datetime import datetime
 from data_set import LineListingDataModule
 from lightning import Trainer
 from model import LSTMRegressor
-from config import p, tensorboard_logger, validate_params, csv_logger 
+from config import p, validate_params, csv_logger
 from callbacks import PrintingCallback, early_stop_callback, checkpoint_callback, CSVLoggerCallback
-from sklearn.model_selection import KFold
-
 import warnings
+import torch  # Add this import statement
 
+# Suppress specific warnings for cleaner output
 warnings.filterwarnings(
     "ignore",
     message="The '.*dataloader.*' does not have many workers.*",
     category=UserWarning,
 )
 
+
+def configure_callbacks(metrics_dir):
+    """
+    Configure callbacks for the trainer.
+    """
+    return [
+        PrintingCallback(verbose=True),
+        early_stop_callback,
+        checkpoint_callback,
+        CSVLoggerCallback(log_file=os.path.join(metrics_dir, "training_metrics.csv")),
+    ]
+
 def main():
     """
     Main script for training and testing the LSTM model on time series data.
-    Parameters are sourced from `config.py`.
+    Logs hyperparameters, metrics, and model artifacts using MLflow.
     """
-
+    # Validate configuration parameters
     validate_params(p)
 
-    # Ensure the 'metrics' directory exists
+    # Ensure metrics directory exists
     metrics_dir = p["metrics_dir"]
-    if not os.path.exists(metrics_dir):
-        os.makedirs(metrics_dir)
+    os.makedirs(metrics_dir, exist_ok=True)
 
-    # set the data module
+    # Prepare the data module
     dm = LineListingDataModule(
-        seq_len=p["seq_len"],  # type: ignore
-        batch_size=p["batch_size"],  # type: ignore
-        num_workers=p["num_workers"],  # type: ignore
+        seq_len=p["seq_len"],
+        output_size=p["output_size"],
+        batch_size=p["batch_size"],
+        num_workers=p["num_workers"],
     )
 
-    # Get the dataset for KFold splitting
+    # Load and preprocess data
     X, y = dm.load_and_preprocess_data()
+    print(f"X shape: {X.shape}, y shape: {y.shape}")
 
-    # Initialize KFold
-    kf = KFold(n_splits=5)
+    # Define a unique run name using the current timestamp
+    run_name = f"test_run_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
 
-    for fold, (train_idx, val_idx) in enumerate(kf.split(X)):
-        print(f"Fold {fold + 1}")
+    # Start MLflow experiment
+    with mlflow.start_run(run_name=run_name):
+        # Log hyperparameters
+        mlflow.log_params({
+            "learning_rate": p["learning_rate"],
+            "batch_size": p["batch_size"],
+            "epochs": p["max_epochs"],
+            "model_type": "LSTM",
+            "seq_len": p["seq_len"],
+            "output_size": p["output_size"],
+            "hidden_size": p["hidden_size"],
+            "num_layers": p["num_layers"],
+            "dropout": p["dropout"],
+        })
 
-        # Split the dataset
-        dm.setup_fold(train_idx, val_idx)
-
-        # Build the model
+        # Initialize the model
         model = LSTMRegressor(
             n_features=p["n_features"],
             hidden_size=p["hidden_size"],
@@ -55,34 +80,58 @@ def main():
             num_layers=p["num_layers"],
             dropout=p["dropout"],
             learning_rate=p["learning_rate"],
+            batch_size=p["batch_size"],  # Pass batch_size to the model
             output_size=p["output_size"],
         )
 
+        # Set up the trainer
         trainer = Trainer(
             accelerator="auto",
             max_epochs=p["max_epochs"],
-            logger=[tensorboard_logger, csv_logger],
-            callbacks=[
-                PrintingCallback(), 
-                early_stop_callback, 
-                checkpoint_callback, 
-                CSVLoggerCallback(log_file=os.path.join(metrics_dir,f"training_metrics_fold_{fold + 1}.csv"))
-            ],
+            logger=[csv_logger],
+            callbacks=configure_callbacks(metrics_dir),
             benchmark=True,
-            log_every_n_steps=5,
-            enable_progress_bar=False,  # Disable the progress bar
+            log_every_n_steps=1,
+            enable_progress_bar=False,
         )
 
-        # Log device being used
-        print(f"Using device: {trainer.strategy.root_device.type} "
-              f"({trainer.strategy.root_device})")
+        # Log device information
+        device = trainer.strategy.root_device
+        print(f"Using device: {device.type} ({device})")
 
+        # Train the model
         trainer.fit(model, dm)
 
-        # Test the model (optional)
+        # Log training and validation metrics
+        train_loss = trainer.callback_metrics.get("train_loss", 0.0)
+        val_loss = trainer.callback_metrics.get("val_loss", 0.0)
+        mlflow.log_metrics({
+            "train_loss": train_loss.item() if isinstance(train_loss, torch.Tensor) else train_loss,
+            "val_loss": val_loss.item() if isinstance(val_loss, torch.Tensor) else val_loss
+        })
+
+        # Log the trained model
+        mlflow.pytorch.log_model(model, "model")
+
+        # Initialize results dictionary for CSV logging
+        results = {
+            "experiment_id": mlflow.active_run().info.run_id,
+            "learning_rate": p["learning_rate"],
+            "batch_size": p["batch_size"],
+            "epochs": p["max_epochs"],
+            "train_loss": train_loss,
+            "val_loss": val_loss,
+        }
+
+        # Test the model (if enabled)
         if p.get("run_test", True):
-            trainer.test(model, datamodule=dm)
+            test_results = trainer.test(model, datamodule=dm)
+
+            # Log test metrics if available
+            if test_results:
+                for metric_name, metric_value in test_results[0].items():
+                    mlflow.log_metric(f"test_{metric_name}", metric_value.item() if isinstance(metric_value, torch.Tensor) else metric_value)
+                    results[f"test_{metric_name}"] = metric_value.item() if isinstance(metric_value, torch.Tensor) else metric_value
 
 if __name__ == "__main__":
     main()
-    # tensorboard --logdir=runs
