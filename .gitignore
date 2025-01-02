@@ -163,6 +163,8 @@ cython_debug/
 # Project specific
 data/
 mlruns/
+metrics/
+predictions/
 archive/
 logs/
 .csv
@@ -170,6 +172,7 @@ logs/
 checkpoints/
 notebooks/
 .vscode/
+test.ipynb
 __pycache__/
 seq_modeling_proj/__pycache__/
 seq_modeling_proj/checkpoints/

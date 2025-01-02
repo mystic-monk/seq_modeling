@@ -80,13 +80,13 @@ def main():
 
         # Extract the last seq_len rows to create the initial input
         initial_input_data = raw_data.iloc[-p["seq_len"]:]
-        initial_input = torch.tensor(np.array(initial_input_data), dtype=torch.float32).unsqueeze(0)  # Add batch dimension
+        initial_input = torch.tensor(np.array(initial_input_data), dtype=torch.float32).unsqueeze(0)
 
         logger.info("Generating predictions...")
         predictions = predict(model, initial_input)
 
         # Generate a sequence of dates for the predictions
-        last_date_dt = pd.to_datetime(last_date)
+        last_date_dt = initial_input_data.index[-1]
         prediction_dates = pd.date_range(start=last_date_dt, periods=p["output_size"])
 
         logger.info("Saving predictions...")
