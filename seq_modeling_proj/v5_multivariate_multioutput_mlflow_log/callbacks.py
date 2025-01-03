@@ -129,7 +129,7 @@ early_stop_callback = EarlyStopping(
     monitor="val_loss",  # Monitor validation loss
     min_delta=0.001,  # Small delta to avoid early stopping on minor fluctuations
     patience=10,  # Stop after 10 epochs of no improvement
-    verbose=False,  # Do not print early stopping messages
+    verbose=True,
     mode="min",  # Minimize validation loss
 )
 
@@ -146,5 +146,4 @@ checkpoint_callback = ModelCheckpoint(
     mode="min",  # Save the minimum validation loss
     save_last=False,  # Save the latest model
     auto_insert_metric_name=False,  # Do not insert the metric name in the filename
-    verbose=False,  # Suppress the warning message
 )

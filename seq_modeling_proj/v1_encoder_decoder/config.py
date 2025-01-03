@@ -1,12 +1,11 @@
 """
 Configuration file for setting hyperparameters and logging setup.
 """
-
 from lightning import seed_everything
 from lightning.pytorch.loggers import CSVLogger
 from torch import nn
-
 import logging
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -14,7 +13,6 @@ logger = logging.getLogger(__name__)
 seed_everything(1, workers=True)
 
 # Hyperparameters
-
 p = dict(
     seq_len=14,  # Sequence length for input data
     batch_size=16,  # Batch size for training
@@ -32,13 +30,14 @@ p = dict(
     experiment_name="experiment",  # Experiment name
     experiment_version="02",  # Experiment version
     metrics_dir="metrics",  # Directory for metrics
-     data_path="../../data/transformed/influenza_features.parquet",  # Path to the data file
+    data_path="../../data/transformed/influenza_features.parquet",  # Path to the data file
 )
 
 # Logging
-csv_logger = CSVLogger(   
+csv_logger = CSVLogger(
     save_dir=p["log_dir"],
-    name=p["experiment_name"],)
+    name=p["experiment_name"],
+)
 
 # Parameter validation (optional)
 def validate_params(params):

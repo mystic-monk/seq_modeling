@@ -89,10 +89,12 @@ class LineListingDataModule(L.LightningDataModule):
         end_date = data.index.max() - pd.Timedelta(weeks=2)
         data = data[data.index <= end_date]
 
-        X = data[["log_cases_14d_moving_avg", "cases_14d_moving_avg", "diff_log_14d"]].copy()  # Ensure the correct columns are included
+        # X = data[["log_cases_14d_moving_avg", "cases_14d_moving_avg", "diff_log_14d"]].copy()  # Ensure the correct columns are included
+        X = data.copy()
+
         
         # Generate y as sequences of output_size
-        y = np.array([X["diff_log_14d"].iloc[i:i + self.output_size].values
+        y = np.array([X["log_cases_14d_moving_avg"].iloc[i:i + self.output_size].values
                   for i in range(len(X) - self.output_size + 1)])
         return X.iloc[:-self.output_size + 1], y
 

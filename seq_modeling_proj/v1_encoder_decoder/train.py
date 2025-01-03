@@ -11,14 +11,12 @@ from callbacks import PrintingCallback, early_stop_callback, checkpoint_callback
 import warnings
 import torch  # Add this import statement
 
-
 # Suppress specific warnings for cleaner output
 warnings.filterwarnings(
     "ignore",
     message="The '.*dataloader.*' does not have many workers.*",
     category=UserWarning,
 )
-
 
 def configure_callbacks(metrics_dir):
     """
@@ -93,7 +91,7 @@ def main():
             callbacks=configure_callbacks(metrics_dir),
             benchmark=True,
             log_every_n_steps=1,
-            enable_progress_bar=False,
+            enable_progress_bar=True,
             enable_model_summary=False,  # Disable model summary logging
         )
 

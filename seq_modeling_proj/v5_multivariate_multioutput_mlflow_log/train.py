@@ -6,11 +6,10 @@ from datetime import datetime
 from data_set import LineListingDataModule
 from lightning import Trainer
 from model import LSTMRegressor
-from config import p, validate_params, csv_logger, logger
+from config import p, validate_params, csv_logger
 from callbacks import PrintingCallback, early_stop_callback, checkpoint_callback, CSVLoggerCallback
 import warnings
 import torch  # Add this import statement
-
 
 # Suppress specific warnings for cleaner output
 warnings.filterwarnings(
@@ -53,7 +52,7 @@ def main():
 
     # Load and preprocess data
     X, y = dm.load_and_preprocess_data()
-    logger.info(f"X shape: {X.shape}, y shape: {y.shape}")
+    print(f"X shape: {X.shape}, y shape: {y.shape}")
 
     # Define a unique run name using the current timestamp
     run_name = f"test_run_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
@@ -94,12 +93,11 @@ def main():
             benchmark=True,
             log_every_n_steps=1,
             enable_progress_bar=False,
-            enable_model_summary=False,  # Disable model summary logging
         )
 
         # Log device information
         device = trainer.strategy.root_device
-        logger.info(f"Using device: {device.type} ({device})")
+        print(f"Using device: {device.type} ({device})")
 
         # Train the model
         trainer.fit(model, dm)

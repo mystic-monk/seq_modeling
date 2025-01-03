@@ -97,6 +97,7 @@ class LineListingDataModule(L.LightningDataModule):
         # Generate y as sequences of output_size
         y = np.array([X["log_cases_14d_moving_avg"].iloc[i:i + self.output_size].values
                   for i in range(len(X) - self.output_size + 1)])
+        y = y.reshape(-1, self.output_size)  # Reshape y to match the model's output shape
         return X.iloc[:-self.output_size + 1], y
 
     def setup(self, stage=None):
