@@ -40,10 +40,14 @@ class TimeseriesDataset(Dataset):
         # print(f"Index: {index}, Seq_len: {self.seq_len}, Output_size: {self.output_size}")
         X_seq = self.X[index : index + self.seq_len]
         y_seq = self.y[index + self.seq_len : index + self.seq_len + self.output_size]
-        # print(f"X_seq: {X_seq.shape}, y_seq: {y_seq.shape}")
+        
+        # Ensure y_seq has the correct length by trimming or padding
+        if len(y_seq) < self.output_size:
+            y_seq = torch.cat([y_seq, torch.zeros(self.output_size - len(y_seq), y_seq.shape[1])])
+        else:
+            y_seq = y_seq[:self.output_size]
+        
         return X_seq, y_seq
-        #dx = self.X[index : index + self.seq_len], self.y[index + self.seq_len : index + self.seq_len + self.output_size]
-        #return dx
 
 
 class LineListingDataModule(L.LightningDataModule):
@@ -107,12 +111,12 @@ class LineListingDataModule(L.LightningDataModule):
         num_of_bins = total_size //  future_forecast
 
         divisible_size = num_of_bins * future_forecast
-        # print(f"Total size: {total_size}", f"Divisible size: {divisible_size}")
+        print(f"Total size: {total_size}", f"Divisible size: {divisible_size}")
         X, y = X[len(X) - divisible_size:], y[len(y) - divisible_size:]
-        # print(f"New X shape: {X.shape}", f"New y shape: {y.shape}")
+        print(f"New X shape: {X.shape}", f"New y shape: {y.shape}")
 
         train_val_bins = int(num_of_bins * 0.8)  # 80% for training
-        # print(f"Train and validation bins: {train_val_bins}")
+        print(f"Train and validation bin: {train_val_bins}")
         train_bins = int(train_val_bins * 0.8)  # 80% of 80% for training
         train_size = train_bins * future_forecast
 
@@ -121,6 +125,7 @@ class LineListingDataModule(L.LightningDataModule):
 
         test_bins = num_of_bins - train_val_bins  # Remaining 20% for testing
         test_size = test_bins * future_forecast
+        print(f"Train size: {train_size}", f"Test size: {test_size}")
 
         # Perform the splits
         X_train, X_val, X_test = (
@@ -133,7 +138,12 @@ class LineListingDataModule(L.LightningDataModule):
             y[train_size:train_size + val_size],
             y[train_size + val_size:],
         )
+        print(f"X_train shape: {X_train.shape}", f"y_train shape: {y_train.shape}")
+        print(f"X_val shape: {X_val.shape}", f"y_val shape: {y_val.shape}")
+        print(f"X_test shape: {X_test.shape}", f"y_test shape: {y_test.shape}")
 
+        print(f"Total size: {total_size}", f"Divisible size: {divisible_size}")
+        print(f"Total size: {train_size + val_size + test_size}")
         return X_train, X_val, X_test, y_train, y_val, y_test
     
     
@@ -155,8 +165,8 @@ class LineListingDataModule(L.LightningDataModule):
 
         X, y = self.load_and_preprocess_data()
         
-        print(f"X shape: {X.shape}, y shape: {y.shape}")
-        print(f"Output size: {self.output_size}")
+        # print(f"X shape: {X.shape}, y shape: {y.shape}")
+        # print(f"Output size: {self.output_size}")
         X_train, X_val, X_test, y_train, y_val, y_test = self.split_data(X, y, self.output_size)
 
         # X_cv, X_test, y_cv, y_test = train_test_split(
@@ -166,7 +176,7 @@ class LineListingDataModule(L.LightningDataModule):
         # X_train, X_val, y_train, y_val = train_test_split(
         #     X_cv, y_cv, test_size=0.25, shuffle=False
         # )
-        print(f"Train size: {len(X_train)}, Val size: {len(X_val)}, Test size: {len(X_test)}")
+        # print(f"Train size: {len(X_train)}, Val size: {len(X_val)}, Test size: {len(X_test)}")
         # logger.info(f"Len of X_cv: {len(X_cv)}, Len of X_train: {len(X_train)}, Len of X_val: {len(X_val)}, Len of X_test: {len(X_test)}")
 
         preprocessing = StandardScaler()
@@ -174,9 +184,9 @@ class LineListingDataModule(L.LightningDataModule):
 
         if stage == "fit" or stage is None:
             self.X_train = preprocessing.transform(X_train)
-            print(f"y_train shape: {y_train.shape}")
+            print(f"fit y_train shape: {y_train.shape}")
             self.y_train = y_train.values.reshape((-1, self.output_size))
-            print(f"y_train shape: {y_train.shape}")
+            print(f"fit y_train shape: {y_train.shape}")
             self.X_val = preprocessing.transform(X_val)
             self.y_val = y_val.values.reshape((-1, self.output_size))
 
