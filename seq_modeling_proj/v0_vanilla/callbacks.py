@@ -99,18 +99,20 @@ class PrintingCallback(Callback):
         """
         super().__init__()
         self.verbose = verbose
+        self.min_val_loss = float("inf")
 
     def on_train_start(self, trainer, pl_module):
         self.start_time = time.time()
         if self.verbose:
             print("Training has started!")
 
-    def on_epoch_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
+    def on_train_epoch_end(self, trainer, pl_module):
+        print(f"Epoch {trainer.current_epoch}: train_loss = {trainer.callback_metrics['train_loss']}, val_loss = {trainer.callback_metrics['val_loss']}, Min val_loss = {self.min_val_loss}")
+
+    def on_train_batch_end(self, trainer: Trainer, pl_module: LightningModule, outputs, batch, batch_idx: int
+    ) -> None:
         if self.verbose:
-            print(f"Epoch {trainer.current_epoch} completed.")
-            for key, value in trainer.callback_metrics.items():
-                if value is not None:
-                    print(f"{key}: {value:.4f}")
+            print(f"Epoch {trainer.current_epoch} | Batch {batch_idx} completed. | Train Loss: {trainer.callback_metrics['train_loss']:.4f}", end="\r")  
 
     def on_train_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
         total_time = time.time() - self.start_time
@@ -124,6 +126,12 @@ class PrintingCallback(Callback):
     
     def test_step_end(self, trainer, pl_module):
         print("Test step completed!")
+    
+    def on_validation_epoch_end(self, trainer, pl_module):
+        
+        if trainer.callback_metrics["val_loss"] < self.min_val_loss:
+            self.min_val_loss = trainer.callback_metrics["val_loss"]
+            
 
 early_stop_callback = EarlyStopping(
     monitor="val_loss",  # Monitor validation loss

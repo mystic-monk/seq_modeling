@@ -21,8 +21,8 @@ p = dict(
     criterion=nn.MSELoss(),  # Loss function
     max_epochs=500,  # Maximum number of training epochs
     n_features=1,  # Number of input features
-    hidden_size=16,  # Number of hidden units in LSTM
-    num_layers=32,  # Number of LSTM layers
+    hidden_size=1,  # Number of hidden units in LSTM
+    num_layers=256,  # Number of LSTM layers
     num_workers=0,  # Number of data loader workers
     dropout=0.2,  # Dropout rate for regularization
     learning_rate=0.001,  # Learning rate for the optimizer
@@ -32,7 +32,7 @@ p = dict(
     experiment_name="experiment",  # Experiment name
     experiment_version="02",  # Experiment version
     metrics_dir="metrics",  # Directory for metrics
-     data_path="../../data/transformed/influenza_features.parquet",  # Path to the data file
+    data_path="../../data/transformed/influenza_features.parquet",  # Path to the data file
 )
 
 # Logging

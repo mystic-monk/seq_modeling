@@ -83,22 +83,60 @@ class LineListingDataModule(L.LightningDataModule):
             )
         data['event_creation_date'] = pd.to_datetime(data['event_creation_date'])
         data.set_index('event_creation_date', inplace=True)
-
-        # Filter data on or after 02-10-2022
-        # start_date = pd.Timestamp("2022-10-02")
-        # data = data[data.index >= start_date]
         
         # Exclude the last two weeks of data
-        end_date = data.index.max() - pd.Timedelta(weeks=2)
-        data = data[data.index <= end_date]
+        # end_date = data.index.max() - pd.Timedelta(weeks=2)
+        # data = data[data.index <= end_date]
 
         X = data[["log_cases_14d_moving_avg"]].copy() # type: ignore
+        y = X["log_cases_14d_moving_avg"].shift(-1).dropna()
         
-        # Generate y as sequences of output_size
-        y = np.array([X["log_cases_14d_moving_avg"].iloc[i:i + self.output_size].values
-                  for i in range(len(X) - self.output_size + 1)])
-        return X.iloc[:-self.output_size + 1], y
+        
+        # Ensure y has enough values to support slicing with output_size
+        y = y.iloc[:len(y) - self.output_size + 1]  # Trim y to ensure no out-of-bounds slicing
+        
+        # Trim X to match the length of y
+        X = X.iloc[-len(y):]
+        
+        return X, y
+    
 
+    def split_data(self, X, y, future_forecast):
+        # Ensure the dataset length is divisible by output_size
+        total_size = len(X)
+        num_of_bins = total_size //  future_forecast
+
+        divisible_size = num_of_bins * future_forecast
+        # print(f"Total size: {total_size}", f"Divisible size: {divisible_size}")
+        X, y = X[len(X) - divisible_size:], y[len(y) - divisible_size:]
+        # print(f"New X shape: {X.shape}", f"New y shape: {y.shape}")
+
+        train_val_bins = int(num_of_bins * 0.8)  # 80% for training
+        # print(f"Train and validation bins: {train_val_bins}")
+        train_bins = int(train_val_bins * 0.8)  # 80% of 80% for training
+        train_size = train_bins * future_forecast
+
+        val_bins = train_val_bins - train_bins  # Remaining 20% for validation
+        val_size = val_bins * future_forecast 
+
+        test_bins = num_of_bins - train_val_bins  # Remaining 20% for testing
+        test_size = test_bins * future_forecast
+
+        # Perform the splits
+        X_train, X_val, X_test = (
+            X[:train_size],
+            X[train_size:train_size + val_size],
+            X[train_size + val_size:],
+        )
+        y_train, y_val, y_test = (
+            y[:train_size],
+            y[train_size:train_size + val_size],
+            y[train_size + val_size:],
+        )
+
+        return X_train, X_val, X_test, y_train, y_val, y_test
+    
+    
     def setup(self, stage=None):
         """
         Data is already transformed and so no need to resample.
@@ -116,42 +154,43 @@ class LineListingDataModule(L.LightningDataModule):
             return
 
         X, y = self.load_and_preprocess_data()
+        
+        print(f"X shape: {X.shape}, y shape: {y.shape}")
+        print(f"Output size: {self.output_size}")
+        X_train, X_val, X_test, y_train, y_val, y_test = self.split_data(X, y, self.output_size)
 
+        # X_cv, X_test, y_cv, y_test = train_test_split(
+        #     X, y, test_size=0.2, shuffle=False
+        # )
 
-        X_cv, X_test, y_cv, y_test = train_test_split(
-            X, y, test_size=0.2, shuffle=False
-        )
-
-        X_train, X_val, y_train, y_val = train_test_split(
-            X_cv, y_cv, test_size=0.25, shuffle=False
-        )
-
-        logger.info(f"Len of X_cv: {len(X_cv)}, Len of X_train: {len(X_train)}, Len of X_val: {len(X_val)}, Len of X_test: {len(X_test)}")
+        # X_train, X_val, y_train, y_val = train_test_split(
+        #     X_cv, y_cv, test_size=0.25, shuffle=False
+        # )
+        print(f"Train size: {len(X_train)}, Val size: {len(X_val)}, Test size: {len(X_test)}")
+        # logger.info(f"Len of X_cv: {len(X_cv)}, Len of X_train: {len(X_train)}, Len of X_val: {len(X_val)}, Len of X_test: {len(X_test)}")
 
         preprocessing = StandardScaler()
         preprocessing.fit(X_train)
 
         if stage == "fit" or stage is None:
             self.X_train = preprocessing.transform(X_train)
-            # self.y_train = y_train.values.reshape((-1, 1))
-            self.y_train = y_train.reshape((-1, self.output_size))
+            print(f"y_train shape: {y_train.shape}")
+            self.y_train = y_train.values.reshape((-1, self.output_size))
+            print(f"y_train shape: {y_train.shape}")
             self.X_val = preprocessing.transform(X_val)
-            # self.y_val = y_val.values.reshape((-1, 1))
-            self.y_val = y_val.reshape((-1, self.output_size))
+            self.y_val = y_val.values.reshape((-1, self.output_size))
 
         if stage == "test" or stage is None:
             self.X_test = preprocessing.transform(X_test)
-
-            # print(f"y_test shape: {y_test.shape}, output_size: {self.output_size}")
-
-            # self.y_test = y_test.values.reshape((-1, 1))
-            self.y_test = y_test.reshape((-1, self.output_size))
+            self.y_test = y_test.values.reshape((-1, self.output_size))
 
     def setup_fold(self, train_idx, val_idx):
         """
         Sets up the training and validation datasets for the given fold.
         """
         X, y = self.load_and_preprocess_data()
+        
+
         preprocessing = StandardScaler()
         preprocessing.fit(X.iloc[train_idx])
 

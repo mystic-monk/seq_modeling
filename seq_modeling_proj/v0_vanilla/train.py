@@ -10,7 +10,7 @@ from config import p, validate_params, csv_logger, logger
 from callbacks import PrintingCallback, early_stop_callback, checkpoint_callback, CSVLoggerCallback
 import warnings
 import torch  # Add this import statement
-
+from torchinfo import summary  # Add this import statement
 
 # Suppress specific warnings for cleaner output
 warnings.filterwarnings(
@@ -85,16 +85,26 @@ def main():
             output_size=p["output_size"],
         )
 
+        # Log model summary
+        logger.info(summary(model, input_size=(p["batch_size"], p["seq_len"], p["n_features"]))
+        )
         # Set up the trainer
         trainer = Trainer(
             accelerator="auto",
             max_epochs=p["max_epochs"],
             logger=[csv_logger],
-            callbacks=configure_callbacks(metrics_dir),
+            # callbacks=configure_callbacks(metrics_dir),
+            callbacks=[
+                PrintingCallback(verbose=True),
+                early_stop_callback,
+                checkpoint_callback,
+                CSVLoggerCallback(log_file=os.path.join(metrics_dir, "training_metrics.csv")),
+                ],
+
             benchmark=True,
             log_every_n_steps=1,
             enable_progress_bar=False,
-            enable_model_summary=False,  # Disable model summary logging
+            enable_model_summary=True,  # Disable model summary logging
         )
 
         # Log device information
