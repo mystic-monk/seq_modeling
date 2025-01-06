@@ -65,28 +65,28 @@ class CSVLoggerCallback(Callback):
         log_data = [value if value is not None else '' for value in log_data]
         self._write_row(log_data)
 
-    # def on_train_epoch_end(self, trainer, pl_module, outputs, batch, batch_idx):
-    #     """
-    #     Logs metrics at the end of each training batch.
-    #     """
-    #     metrics = trainer.callback_metrics
-    #     log_data = [
-    #         trainer.current_epoch,
-    #         pl_module.hparams.learning_rate,
-    #         pl_module.hparams.batch_size,
-    #         trainer.current_epoch,
-    #         metrics.get("train_loss", None),
-    #         metrics.get("val_loss", None),
-    #         metrics.get("test_loss", None),
-    #         metrics.get("test_mae", None),
-    #         metrics.get("test_mse", None),
-    #         metrics.get("test_rmse", None),
-    #         metrics.get("test_r2", None),
-    #         metrics.get("test_mape", None)
-    #     ]
-    #     log_data = [value.item() if isinstance(value, torch.Tensor) else value for value in log_data]
-    #     log_data = [value if value is not None else '' for value in log_data]
-    #     self._write_row(log_data)
+    def on_train_epoch_end(self, trainer, pl_module, outputs=None, batch=None, batch_idx=None):
+        """
+        Logs metrics at the end of each training batch.
+        """
+        metrics = trainer.callback_metrics
+        log_data = [
+            trainer.current_epoch,
+            pl_module.hparams.learning_rate,
+            pl_module.hparams.batch_size,
+            trainer.current_epoch,
+            metrics.get("train_loss", None),
+            metrics.get("val_loss", None),
+            metrics.get("test_loss", None),
+            metrics.get("test_mae", None),
+            metrics.get("test_mse", None),
+            metrics.get("test_rmse", None),
+            metrics.get("test_r2", None),
+            metrics.get("test_mape", None)
+        ]
+        log_data = [value.item() if isinstance(value, torch.Tensor) else value for value in log_data]
+        log_data = [value if value is not None else '' for value in log_data]
+        self._write_row(log_data)
 
 class PrintingCallback(Callback):
     """
@@ -112,7 +112,7 @@ class PrintingCallback(Callback):
     def on_train_batch_end(self, trainer: Trainer, pl_module: LightningModule, outputs, batch, batch_idx: int
     ) -> None:
         if self.verbose:
-            print(f"Epoch {trainer.current_epoch} | Batch {batch_idx} completed. | Train Loss: {trainer.callback_metrics['train_loss']:.4f}", end="\r")  
+            print(f"Epoch {trainer.current_epoch} | Batch {batch_idx} completed. | Batch Loss: {trainer.callback_metrics['batch_loss']:.4f}", end="\r")  
 
     def on_train_end(self, trainer: Trainer, pl_module: LightningModule) -> None:
         total_time = time.time() - self.start_time

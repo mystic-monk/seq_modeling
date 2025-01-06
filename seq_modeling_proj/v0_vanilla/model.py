@@ -61,6 +61,7 @@ class LSTMRegressor(L.LightningModule):
         """
         Reset hidden and cell states to zeros.
         """
+
         self.h0 = torch.zeros(self.num_layers, batch_size, self.hidden_size).to(self.device)
         self.c0 = torch.zeros(self.num_layers, batch_size, self.hidden_size).to(self.device)
 
@@ -68,11 +69,13 @@ class LSTMRegressor(L.LightningModule):
         """
         Forward pass with stateful hidden and cell states.
         """
+
         if self.h0 is None or self.c0 is None:
             self.reset_states(x.size(0))
         lstm_out, (h0, c0) = self.lstm(x, (self.h0.to(x.device), self.c0.to(x.device)))
         (self.h0, self.c0) = (h0.detach(), c0.detach())
         y_pred = self.fc(lstm_out[:, -1])
+
         return y_pred
 
 
@@ -111,9 +114,6 @@ class LSTMRegressor(L.LightningModule):
         """
         x, y = batch
 
-        y = y[:, -1]
-        y = y.squeeze(-1)  # Squeeze the extra dimension from the target tensor
-        
         y_hat = self.forward(x)
 
         # Compute the loss
@@ -126,9 +126,9 @@ class LSTMRegressor(L.LightningModule):
         self.log("train_residuals_mean", residuals.mean(), on_step=True, on_epoch=True)
 
         # Log the loss
-        self.log("train_loss", loss.item(), on_step=True, on_epoch=True)
-        
-        # print(f"Batch {batch_idx}, Loss: {loss.item()}", end="\r")
+        self.log("batch_loss", loss.item(), on_step=True, on_epoch=False)
+        self.log("train_loss", loss.item(), on_step=False, on_epoch=True)
+
         # Return only the loss
         return loss
 
@@ -141,17 +141,11 @@ class LSTMRegressor(L.LightningModule):
         Returns:
             torch.Tensor: Validation loss.
         """
+
         x, y = batch
 
-        y = y[:, -1]
-        y = y.squeeze(-1)  # Squeeze the extra dimension from the target tensor
-
-        # y_hat, (ht, ct) = self.forward(x, h0, c0)
         y_hat = self.forward(x)
 
-        # Ensure tensors are contiguous
-        y = y.contiguous()
-        y_hat = y_hat.contiguous()
         
         # Calculate the loss
         loss = self.criterion(y_hat, y)
@@ -189,23 +183,14 @@ class LSTMRegressor(L.LightningModule):
             torch.Tensor: Test loss.
         """
         x, y = batch
-        y = y[:, -1]
-        y = y.squeeze(-1)  # Squeeze the extra dimension from the target tensor
-        # y_hat, (ht, ct) = self.forward(x)
-        y_hat = self.forward(x)
 
-        # Ensure tensors are contiguous
-        y = y.contiguous()
-        y_hat = y_hat.contiguous()
+        y_hat = self.forward(x)
 
         # Calculate the loss
         loss = self.criterion(y_hat, y)
 
         # Calculate residuals
         residuals = y - y_hat
-
-        # Log mean of residuals
-        self.log("test_residuals_mean", residuals.mean(), on_step=False, on_epoch=True)
 
         # Calculate additional metrics
         test_mae = self.mae(y_hat, y)
@@ -221,6 +206,8 @@ class LSTMRegressor(L.LightningModule):
         self.log("test_rmse", test_rmse.item(), on_step=False, on_epoch=True)
         self.log("test_r2", test_r2.item(), on_step=False, on_epoch=True)
         self.log("test_mape", test_mape.item(), on_step=False, on_epoch=True)
+        # Log mean of residuals
+        self.log("test_residuals_mean", residuals.mean(), on_step=False, on_epoch=True)
 
         return loss
 

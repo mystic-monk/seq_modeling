@@ -4,7 +4,7 @@ import pandas as pd
 import torch
 from torch.utils.data import Dataset, DataLoader
 import lightning as L
-from sklearn.model_selection import TimeSeriesSplit
+
 # Sklearn tools
 # from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -39,15 +39,14 @@ class TimeseriesDataset(Dataset):
     def __getitem__(self, index):
         # print(f"Index: {index}, Seq_len: {self.seq_len}, Output_size: {self.output_size}")
         X_seq = self.X[index : index + self.seq_len]
-        # y_seq = self.y[index + self.seq_len : index + self.seq_len + self.output_size]
-        y_seq = self.y[index : index + self.seq_len]
-        # print(f"X_seq shape: {X_seq.shape}, y_seq shape: {y_seq.shape}")    
+        y_seq = self.y[index + self.seq_len : index + self.seq_len + self.output_size]
+        
         # Ensure y_seq has the correct length by trimming or padding
-        # if len(y_seq) < self.output_size:
-        #     y_seq = torch.cat([y_seq, torch.zeros(self.output_size - len(y_seq), y_seq.shape[1])])
-        # else:
-        #     y_seq = y_seq[:self.output_size]
-        # 
+        if len(y_seq) < self.output_size:
+            y_seq = torch.cat([y_seq, torch.zeros(self.output_size - len(y_seq), y_seq.shape[1])])
+        else:
+            y_seq = y_seq[:self.output_size]
+        
         return X_seq, y_seq
 
 
@@ -75,7 +74,6 @@ class LineListingDataModule(L.LightningDataModule):
         self.columns = None
         self.preprocessing = None
         self.data_path = p["data_path"]
-        self.nums_splits = p["nums_splits"]
 
     def prepare_data(self):
         print("Prepare Data is called.")
@@ -88,21 +86,17 @@ class LineListingDataModule(L.LightningDataModule):
             columns=["event_creation_date", "log_cases_14d_moving_avg"]
             )
         data['event_creation_date'] = pd.to_datetime(data['event_creation_date'])
-        data = data.sort_values(by='event_creation_date')
         data.set_index('event_creation_date', inplace=True)
         
         X = data[["log_cases_14d_moving_avg"]].copy() # type: ignore
-        # y = X["log_cases_14d_moving_avg"].shift(-1).dropna()  # type: ignore
-        y = X["log_cases_14d_moving_avg"].shift(-self.output_size).dropna()
-        # print(f"In Load and Preprocees :> X shape: {X.shape}", f"y shape: {y.shape}")
+        y = X["log_cases_14d_moving_avg"].shift(-1).dropna()  # type: ignore
+        
         # Ensure y has enough values to support slicing with output_size
-        # y = y.iloc[self.output_size - 1:] 
+        y = y.iloc[self.output_size - 1:] 
         
         # Trim X to match the length of y
-        X = X.iloc[:len(y)]
-        # print(f"In Load and Preprocees :>> X shape: {X.shape}", f"y shape: {y.shape}")
-        # print(f"X element : {X.head(5) }")
-        # print(f"y element : {y.head(5) }")
+        X = X.iloc[-len(y):]
+        
         return X, y
     
 
@@ -139,23 +133,15 @@ class LineListingDataModule(L.LightningDataModule):
             y[train_size:train_size + val_size],
             y[train_size + val_size:],
         )
-        # print(f"X_train shape: {X_train.shape}", f"y_train shape: {y_train.shape}")
-        # print(f"X_val shape: {X_val.shape}", f"y_val shape: {y_val.shape}")
-        # print(f"X_test shape: {X_test.shape}", f"y_test shape: {y_test.shape}")
+        print(f"X_train shape: {X_train.shape}", f"y_train shape: {y_train.shape}")
+        print(f"X_val shape: {X_val.shape}", f"y_val shape: {y_val.shape}")
+        print(f"X_test shape: {X_test.shape}", f"y_test shape: {y_test.shape}")
 
-        # print(f"Total size: {total_size}", f"Divisible size: {divisible_size}")
-        # print(f"Total size: {train_size + val_size + test_size}")
+        print(f"Total size: {total_size}", f"Divisible size: {divisible_size}")
+        print(f"Total size: {train_size + val_size + test_size}")
         return X_train, X_val, X_test, y_train, y_val, y_test
     
     
-    def walkForwardSplit(self, X, y, nums_splits):
-        tss = TimeSeriesSplit(n_splits = nums_splits)
-        
-        for train_index, test_index in tss.split(X):
-            X_train, X_test = X.iloc[train_index], X.iloc[test_index]
-            y_train, y_test = y.iloc[train_index], y.iloc[test_index]
-            return X_train, X_test, y_train, y_test
-
     def setup(self, stage=None):
         """
         Data is already transformed and so no need to resample.
@@ -166,7 +152,6 @@ class LineListingDataModule(L.LightningDataModule):
         logger.info("Setup is called.")
 
         if stage == "fit" and self.X_train is not None:
-            print("Setup is returned.")
             return
         if stage == "test" and self.X_test is not None:
             return
@@ -175,33 +160,23 @@ class LineListingDataModule(L.LightningDataModule):
         print("Data is being loaded.")
         X, y = self.load_and_preprocess_data()
         print("Data is loaded.")
-        
-        # X_train, X_val, X_test, y_train, y_val, y_test = self.split_data(X, y, self.output_size)
-        
-        X_train, X_test, y_train, y_test = self.walkForwardSplit(X, y, self.nums_splits)
-        X_val, y_val = X_test, y_test  # Use the test split as validation for simplicity
+        X_train, X_val, X_test, y_train, y_val, y_test = self.split_data(X, y, self.output_size + self.seq_len)
         print("Data is split.")
-        
-        # print(f"X_train shape: {X_train.shape}", f"y_train shape: {y_train.shape}")
-        # print(f"X_val shape: {X_val.shape}", f"y_val shape: {y_val.shape}")
-        # print(f"X_test shape: {X_test.shape}", f"y_test shape: {y_test.shape}")
+        print(f"X_train shape: {X_train.shape}", f"y_train shape: {y_train.shape}")
         preprocessing = StandardScaler()
         preprocessing.fit(X_train)
 
         if stage == "fit" or stage is None:
             self.X_train = preprocessing.transform(X_train)
+            print(f"fit y_train shape: {y_train.shape}")
+            self.y_train = y_train.values.reshape((-1, self.output_size))
+            print(f"fit y_train shape: {y_train.shape}")
             self.X_val = preprocessing.transform(X_val)
-
-            # self.X_train = np.array(X_train)
-            # self.X_val = np.array(X_val)
-
-            self.y_train = np.array(y_train)
-            self.y_val = np.array(y_val)
-  
+            self.y_val = y_val.values.reshape((-1, self.output_size))
 
         if stage == "test" or stage is None:
             self.X_test = preprocessing.transform(X_test)
-            self.y_test = np.array(y_test)
+            self.y_test = y_test.values.reshape((-1, self.output_size))
 
     def setup_fold(self, train_idx, val_idx):
         """
@@ -221,7 +196,6 @@ class LineListingDataModule(L.LightningDataModule):
 
     def train_dataloader(self):
         print("Train Dataloader is called.")
-        print(f"X_train shape: {self.X_train.shape}", f"y_train shape: {self.y_train.shape}")
         train_dataset = TimeseriesDataset(
             self.X_train,
             self.y_train,

@@ -9,8 +9,8 @@ from model import LSTMRegressor
 from config import p, validate_params, csv_logger, logger
 from callbacks import PrintingCallback, early_stop_callback, checkpoint_callback, CSVLoggerCallback
 import warnings
-import torch  # Add this import statement
-from torchinfo import summary  # Add this import statement
+import torch
+from torchinfo import summary
 
 # Suppress specific warnings for cleaner output
 warnings.filterwarnings(
@@ -18,7 +18,6 @@ warnings.filterwarnings(
     message="The '.*dataloader.*' does not have many workers.*",
     category=UserWarning,
 )
-
 
 def configure_callbacks(metrics_dir):
     """
@@ -54,6 +53,7 @@ def main():
     # Load and preprocess data
     X, y = dm.load_and_preprocess_data()
     logger.info(f"X shape: {X.shape}, y shape: {y.shape}")
+    print(f"X shape: {X.shape}, y shape: {y.shape}")
 
     # Define a unique run name using the current timestamp
     run_name = f"test_run_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
@@ -86,25 +86,18 @@ def main():
         )
 
         # Log model summary
-        logger.info(summary(model, input_size=(p["batch_size"], p["seq_len"], p["n_features"]))
-        )
+        logger.info(summary(model, input_size=(p["batch_size"], p["seq_len"], p["n_features"]), col_names=["input_size", "output_size", "num_params"]))
+        # print(summary(model, input_size=(p["batch_size"], p["seq_len"], p["n_features"]), col_names=["input_size", "output_size", "num_params"]))
+
         # Set up the trainer
         trainer = Trainer(
             accelerator="auto",
             max_epochs=p["max_epochs"],
             logger=[csv_logger],
-            # callbacks=configure_callbacks(metrics_dir),
-            callbacks=[
-                PrintingCallback(verbose=True),
-                early_stop_callback,
-                checkpoint_callback,
-                CSVLoggerCallback(log_file=os.path.join(metrics_dir, "training_metrics.csv")),
-                ],
-
-            benchmark=True,
+            callbacks=configure_callbacks(metrics_dir),
             log_every_n_steps=1,
             enable_progress_bar=False,
-            enable_model_summary=True,  # Disable model summary logging
+            enable_model_summary=True,
         )
 
         # Log device information

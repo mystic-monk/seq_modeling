@@ -33,6 +33,7 @@ p = dict(
     experiment_version="02",  # Experiment version
     metrics_dir="metrics",  # Directory for metrics
     data_path="../../data/transformed/influenza_features.parquet",  # Path to the data file
+    nums_splits=12,  # Number of splits for walk forward validation 
 )
 
 # Logging
