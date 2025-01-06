@@ -6,6 +6,10 @@ from lightning import seed_everything
 from lightning.pytorch.loggers import CSVLogger
 from torch import nn
 
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # Ensure reproducibility
 seed_everything(1, workers=True)
 
@@ -13,21 +17,23 @@ seed_everything(1, workers=True)
 
 p = dict(
     seq_len=14,  # Sequence length for input data
-    batch_size=16,  # Batch size for training
+    batch_size=32,  # Batch size for training
     criterion=nn.MSELoss(),  # Loss function
-    max_epochs=500,  # Maximum number of training epochs
-    n_features=3,  # Number of input features
+    max_epochs=100,  # Maximum number of training epochs
+    n_features=1,  # Number of input features
     hidden_size=16,  # Number of hidden units in LSTM
-    num_layers=32,  # Number of LSTM layers
+    num_layers=256,  # Number of LSTM layers
     num_workers=0,  # Number of data loader workers
     dropout=0.2,  # Dropout rate for regularization
-    learning_rate=0.001,  # Learning rate for the optimizer
+    learning_rate=0.1,  # Learning rate for the optimizer
     output_size=14,  # Update the output size to 14
     run_test=True,  # Run test after training
     log_dir="tb_logs",  # Directory for logs
     experiment_name="experiment",  # Experiment name
     experiment_version="02",  # Experiment version
     metrics_dir="metrics",  # Directory for metrics
+    data_path="../data/transformed/influenza_features.parquet",  # Path to the data file
+    nums_splits=12,  # Number of splits for walk forward validation 
 )
 
 # Logging
@@ -58,6 +64,7 @@ def validate_params(params):
         "dropout": (float, lambda x: 0 <= x <= 1),
         "learning_rate": (float, lambda x: x > 0),
         "output_size": (int, lambda x: x > 0),
+        "data_path": (str, lambda x: len(x) > 0),
     }
     for key, (expected_type, condition) in required_keys.items():
         if key not in params:
