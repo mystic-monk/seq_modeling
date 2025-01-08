@@ -16,7 +16,7 @@ def objective(trial):
 
     # Suggest hyperparameters
     hidden_size = trial.suggest_int("hidden_size", 16, 128, step=16)
-    num_layers = trial.suggest_int("num_layers", 1, 16)
+    num_layers = trial.suggest_int("num_layers", 1, 8)
     dropout = trial.suggest_float("dropout", 0.1, 0.5)
     learning_rate = trial.suggest_loguniform("learning_rate", 1e-4, 1e-2)
     batch_size = trial.suggest_categorical("batch_size", [16, 32, 64])

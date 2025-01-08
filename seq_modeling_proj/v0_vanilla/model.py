@@ -69,7 +69,8 @@ class LSTMRegressor(L.LightningModule):
         """
         Forward pass with stateful hidden and cell states.
         """
-
+        # print("Forward pass called.")
+        # print(f"Size of X {x.size()}")
         if self.h0 is None or self.c0 is None:
             self.reset_states(x.size(0))
         lstm_out, (h0, c0) = self.lstm(x, (self.h0.to(x.device), self.c0.to(x.device)))
@@ -112,6 +113,9 @@ class LSTMRegressor(L.LightningModule):
         Returns:
             torch.Tensor: Training loss.
         """
+        print("-----------------    -----------------")
+        print("Training step: Start.")
+        print("-----------------    -----------------")
         x, y = batch
 
         y_hat = self.forward(x)
@@ -141,7 +145,9 @@ class LSTMRegressor(L.LightningModule):
         Returns:
             torch.Tensor: Validation loss.
         """
-
+        print("-----------------    -----------------")
+        print("Validation step: Start.")
+        print("-----------------    -----------------")
         x, y = batch
 
         y_hat = self.forward(x)
@@ -164,12 +170,12 @@ class LSTMRegressor(L.LightningModule):
         val_mape = self.mape(y_hat, y)
 
         # log metrics
-        self.log("val_loss", loss.item(), on_step=True, on_epoch=True)
-        self.log("val_mae", val_mae.item(), on_step=True, on_epoch=True)
-        self.log("val_mse", val_mse.item(), on_step=True, on_epoch=True)
-        self.log("val_rmse", val_rmse.item(), on_step=True, on_epoch=True)
-        self.log("val_r2", val_r2.item(), on_step=True, on_epoch=True)
-        self.log("val_mape", val_mape.item(), on_step=True, on_epoch=True)
+        self.log("val_loss", loss.item(), on_step=False, on_epoch=True)
+        self.log("val_mae", val_mae.item(), on_step=False, on_epoch=True)
+        self.log("val_mse", val_mse.item(), on_step=False, on_epoch=True)
+        self.log("val_rmse", val_rmse.item(), on_step=False, on_epoch=True)
+        self.log("val_r2", val_r2.item(), on_step=False, on_epoch=True)
+        self.log("val_mape", val_mape.item(), on_step=False, on_epoch=True)
 
         return loss
 
@@ -182,6 +188,7 @@ class LSTMRegressor(L.LightningModule):
         Returns:
             torch.Tensor: Test loss.
         """
+        print("Test step called.")
         x, y = batch
 
         y_hat = self.forward(x)

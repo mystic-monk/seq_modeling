@@ -100,6 +100,7 @@ class PrintingCallback(Callback):
         super().__init__()
         self.verbose = verbose
         self.min_val_loss = float("inf")
+        self.first_val_call = True
 
     def on_train_start(self, trainer, pl_module):
         self.start_time = time.time()
@@ -107,7 +108,8 @@ class PrintingCallback(Callback):
             print("Training has started!")
 
     def on_train_epoch_end(self, trainer, pl_module):
-        print(f"Epoch {trainer.current_epoch}: train_loss = {trainer.callback_metrics['train_loss']}, val_loss = {trainer.callback_metrics['val_loss']}, Min val_loss = {self.min_val_loss}")
+
+        print(f"\nEpoch {trainer.current_epoch}: train_loss = {trainer.callback_metrics['train_loss']}, val_loss = {trainer.callback_metrics['val_loss']}, Min val_loss = {self.min_val_loss}")
 
     def on_train_batch_end(self, trainer: Trainer, pl_module: LightningModule, outputs, batch, batch_idx: int
     ) -> None:
@@ -129,8 +131,11 @@ class PrintingCallback(Callback):
     
     def on_validation_epoch_end(self, trainer, pl_module):
         
-        if trainer.callback_metrics["val_loss"] < self.min_val_loss:
+        if trainer.callback_metrics["val_loss"] < self.min_val_loss and not self.first_val_call:
             self.min_val_loss = trainer.callback_metrics["val_loss"]
+
+        elif self.first_val_call:
+            self.first_val_call = False
             
 
 early_stop_callback = EarlyStopping(

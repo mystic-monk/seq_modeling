@@ -1,4 +1,5 @@
 # data_set.py
+import os
 import numpy as np
 import pandas as pd
 import torch
@@ -6,15 +7,10 @@ from torch.utils.data import Dataset, DataLoader
 import lightning as L
 from sklearn.model_selection import TimeSeriesSplit
 # Sklearn tools
-# from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
 # Import configuration
 from config import p , logger
-
-# import logging
-# logging.basicConfig(level=logging.INFO)
-# logger = logging.getLogger(__name__)
 
 
 class TimeseriesDataset(Dataset):
@@ -34,20 +30,15 @@ class TimeseriesDataset(Dataset):
         self.output_size = output_size
 
     def __len__(self):
-        return max(0, len(self.X) - self.seq_len - self.output_size + 1)
+        return self.X.shape[0]
 
     def __getitem__(self, index):
-        # print(f"Index: {index}, Seq_len: {self.seq_len}, Output_size: {self.output_size}")
-        X_seq = self.X[index : index + self.seq_len]
-        # y_seq = self.y[index + self.seq_len : index + self.seq_len + self.output_size]
-        y_seq = self.y[index : index + self.seq_len]
-        # print(f"X_seq shape: {X_seq.shape}, y_seq shape: {y_seq.shape}")    
-        # Ensure y_seq has the correct length by trimming or padding
-        # if len(y_seq) < self.output_size:
-        #     y_seq = torch.cat([y_seq, torch.zeros(self.output_size - len(y_seq), y_seq.shape[1])])
-        # else:
-        #     y_seq = y_seq[:self.output_size]
-        # 
+        end = min(index + self.seq_len, self.X.shape[0])
+        
+        X_seq = self.X[index : end]
+
+        y_seq = self.y[index : end]
+
         return X_seq, y_seq
 
 
@@ -74,17 +65,53 @@ class LineListingDataModule(L.LightningDataModule):
         self.y_test = None
         self.columns = None
         self.preprocessing = None
-        self.data_path = p["data_path"]
+        self.train_val_data_path = p["train_val_data_path"]
+        self.test_data_path = p["test_data_path"]
         self.nums_splits = p["nums_splits"]
+        self.X_train_val = None 
+        self.y_train_val = None
+        
+        self.X_test_p= None
+        self.y_test_p= None
+
+        self.debug = p["debug"]
+
 
     def prepare_data(self):
-        print("Prepare Data is called.")
-        logger.info("Prepare Data is called.")
-        pass
-    
-    def load_and_preprocess_data(self):
+        """
+        This method is for any data-related operations that should happen once
+        and before setup. For example, loading datasets.
+        """
+        if self.X_train is not None:
+            return
+        print("-----------------    -----------------")
+        print("Prepare_data: Start")
+        print("-----------------    -----------------")
+        logger.info("Preparing data...")
+
+        # Example: Check if data files exist, and if not, download or extract them
+        if not os.path.exists(self.train_val_data_path) or not os.path.exists(self.test_data_path):
+            raise FileNotFoundError(f"Data not found at {self.data_path} and or {self.test_data_path}")
+        
+        self.X_train_val, self.y_train_val = self.load_and_preprocess_data(self.train_val_data_path)
+        self.X_test_p, self.y_test_p = self.load_and_preprocess_data(self.test_data_path)
+        
+        print("\tData is loaded and preprocessed.")
+
+        print(f"\tX_train_val shape: {self.X_train_val.shape}, y_train_val shape: {self.y_train_val.shape}")
+        print(f"\tX_test_p shape: {self.X_test_p.shape}, y_test_p shape: {self.y_test_p.shape}")
+
+        return
+
+    def load_and_preprocess_data(self, data_path):
+        """
+        Load and preprocess the data.
+        """
+        print("-----------------    -----------------")
+        print("Data is being loaded...")
+        print("-----------------    -----------------")
         data = pd.read_parquet(
-            self.data_path, 
+            data_path, 
             columns=["event_creation_date", "log_cases_14d_moving_avg"]
             )
         data['event_creation_date'] = pd.to_datetime(data['event_creation_date'])
@@ -92,60 +119,13 @@ class LineListingDataModule(L.LightningDataModule):
         data.set_index('event_creation_date', inplace=True)
         
         X = data[["log_cases_14d_moving_avg"]].copy() # type: ignore
-        # y = X["log_cases_14d_moving_avg"].shift(-1).dropna()  # type: ignore
         y = X["log_cases_14d_moving_avg"].shift(-self.output_size).dropna()
-        # print(f"In Load and Preprocees :> X shape: {X.shape}", f"y shape: {y.shape}")
-        # Ensure y has enough values to support slicing with output_size
-        # y = y.iloc[self.output_size - 1:] 
-        
+
         # Trim X to match the length of y
         X = X.iloc[:len(y)]
-        # print(f"In Load and Preprocees :>> X shape: {X.shape}", f"y shape: {y.shape}")
-        # print(f"X element : {X.head(5) }")
-        # print(f"y element : {y.head(5) }")
+
+
         return X, y
-    
-
-    def split_data(self, X, y, future_forecast):
-        # Ensure the dataset length is divisible by output_size
-        total_size = len(X)
-        num_of_bins = total_size //  future_forecast
-
-        divisible_size = num_of_bins * future_forecast
-        print(f"Total size: {total_size}", f"Divisible size: {divisible_size}")
-        X, y = X[len(X) - divisible_size:], y[len(y) - divisible_size:]
-        print(f"New X shape: {X.shape}", f"New y shape: {y.shape}")
-
-        train_val_bins = int(num_of_bins * 0.8)  # 80% for training
-        print(f"Train and validation bin: {train_val_bins}")
-        train_bins = int(train_val_bins * 0.8)  # 80% of 80% for training
-        train_size = train_bins * future_forecast
-
-        val_bins = train_val_bins - train_bins  # Remaining 20% for validation
-        val_size = val_bins * future_forecast 
-
-        test_bins = num_of_bins - train_val_bins  # Remaining 20% for testing
-        test_size = test_bins * future_forecast
-        print(f"Train size: {train_size}", f"Test size: {test_size}")
-
-        # Perform the splits
-        X_train, X_val, X_test = (
-            X[:train_size],
-            X[train_size:train_size + val_size],
-            X[train_size + val_size:],
-        )
-        y_train, y_val, y_test = (
-            y[:train_size],
-            y[train_size:train_size + val_size],
-            y[train_size + val_size:],
-        )
-        # print(f"X_train shape: {X_train.shape}", f"y_train shape: {y_train.shape}")
-        # print(f"X_val shape: {X_val.shape}", f"y_val shape: {y_val.shape}")
-        # print(f"X_test shape: {X_test.shape}", f"y_test shape: {y_test.shape}")
-
-        # print(f"Total size: {total_size}", f"Divisible size: {divisible_size}")
-        # print(f"Total size: {train_size + val_size + test_size}")
-        return X_train, X_val, X_test, y_train, y_val, y_test
     
     
     def walkForwardSplit(self, X, y, nums_splits):
@@ -162,8 +142,7 @@ class LineListingDataModule(L.LightningDataModule):
         Both 'np.nan' and '?' are converted to 'np.nan'
         'Date' and 'Time' columns are merged into 'dt' index
         """
-        print("Setup is called.")
-        logger.info("Setup is called.")
+
 
         if stage == "fit" and self.X_train is not None:
             print("Setup is returned.")
@@ -172,56 +151,58 @@ class LineListingDataModule(L.LightningDataModule):
             return
         if stage is None and self.X_train is not None and self.X_test is not None:
             return
-        print("Data is being loaded.")
-        X, y = self.load_and_preprocess_data()
-        print("Data is loaded.")
+                
+        if self.debug:
+            print("-----------------    -----------------")
+            print("Setup is called.")
+            print("-----------------    -----------------")
+            logger.info("Setup is called.")
         
-        # X_train, X_val, X_test, y_train, y_val, y_test = self.split_data(X, y, self.output_size)
-        
-        X_train, X_test, y_train, y_test = self.walkForwardSplit(X, y, self.nums_splits)
-        X_val, y_val = X_test, y_test  # Use the test split as validation for simplicity
-        print("Data is split.")
-        
-        # print(f"X_train shape: {X_train.shape}", f"y_train shape: {y_train.shape}")
-        # print(f"X_val shape: {X_val.shape}", f"y_val shape: {y_val.shape}")
-        # print(f"X_test shape: {X_test.shape}", f"y_test shape: {y_test.shape}")
+        X_train, X_val, y_train, y_val = self.walkForwardSplit(self.X_train_val, self.y_train_val, self.nums_splits)
+
+        print("\tData is split.")
+        print(f"\tX_train shape: {X_train.shape}, y_train shape: {y_train.shape}")
+        print(f"\tX_val shape: {X_val.shape}, y_val shape: {y_val.shape}")   
+
         preprocessing = StandardScaler()
         preprocessing.fit(X_train)
 
-        if stage == "fit" or stage is None:
-            self.X_train = preprocessing.transform(X_train)
-            self.X_val = preprocessing.transform(X_val)
+        # if stage == "fit" or stage is None:
+        self.X_train = preprocessing.transform(X_train)
+        self.X_val = preprocessing.transform(X_val)
 
-            # self.X_train = np.array(X_train)
-            # self.X_val = np.array(X_val)
+        # self.X_train = np.array(X_train)
+        # self.X_val = np.array(X_val)
 
-            self.y_train = np.array(y_train)
-            self.y_val = np.array(y_val)
-  
+        self.y_train = np.array(y_train)
+        self.y_val = np.array(y_val)
 
-        if stage == "test" or stage is None:
-            self.X_test = preprocessing.transform(X_test)
-            self.y_test = np.array(y_test)
 
-    def setup_fold(self, train_idx, val_idx):
-        """
-        Sets up the training and validation datasets for the given fold.
-        """
-        X, y = self.load_and_preprocess_data()
+    # if stage == "test" or stage is None:
+        self.X_test = preprocessing.transform(self.X_test_p)
+        self.y_test = np.array(self.y_test_p)
+
+    # def setup_fold(self, train_idx, val_idx):
+    #     """
+    #     Sets up the training and validation datasets for the given fold.
+    #     """
+    #     X, y = self.load_and_preprocess_data()
         
 
-        preprocessing = StandardScaler()
-        preprocessing.fit(X.iloc[train_idx])
+    #     preprocessing = StandardScaler()
+    #     preprocessing.fit(X.iloc[train_idx])
 
-        self.X_train = preprocessing.transform(X.iloc[train_idx])
-        self.y_train = y[train_idx].reshape((-1, self.output_size))
-        self.X_val = preprocessing.transform(X.iloc[val_idx])
-        self.y_val = y[val_idx].reshape((-1, self.output_size))
+    #     self.X_train = preprocessing.transform(X.iloc[train_idx])
+    #     self.y_train = y[train_idx].reshape((-1, self.output_size))
+    #     self.X_val = preprocessing.transform(X.iloc[val_idx])
+    #     self.y_val = y[val_idx].reshape((-1, self.output_size))
 
 
     def train_dataloader(self):
-        print("Train Dataloader is called.")
-        print(f"X_train shape: {self.X_train.shape}", f"y_train shape: {self.y_train.shape}")
+        print("-----------------    -----------------")
+        print("Train Dataloader: Start.")
+        print("-----------------    -----------------")
+        print(f"\tX_train shape: {self.X_train.shape}", f"y_train shape: {self.y_train.shape}")
         train_dataset = TimeseriesDataset(
             self.X_train,
             self.y_train,
@@ -239,8 +220,12 @@ class LineListingDataModule(L.LightningDataModule):
         return train_loader
 
     def val_dataloader(self):
+        print("-----------------    -----------------")
+        print("Val Dataloader: Start.")
+        print("-----------------    -----------------")
+        print(f"\tX_val shape: {self.X_val.shape}", f"y_val shape: {self.y_val.shape}")
         val_dataset = TimeseriesDataset(self.X_val, self.y_val, seq_len=self.seq_len, output_size=self.output_size)  # type: ignore
-        
+        print(f"\tVal Length {len(val_dataset)}")
         val_loader = DataLoader(
             val_dataset,
             batch_size=self.batch_size,
@@ -248,10 +233,17 @@ class LineListingDataModule(L.LightningDataModule):
             num_workers=self.num_workers,
             drop_last=True,
         )
+        print(f"\tVal Dataloader Shape {len(val_loader)}")
         return val_loader
 
     def test_dataloader(self):
         test_dataset = TimeseriesDataset(self.X_test, self.y_test, seq_len=self.seq_len, output_size=self.output_size)  # type: ignore
+        print("--------------------------------------")
+        print("Test Dataloader: Start.")
+        print("--------------------------------------") 
+        print(f"\tTest Length {len(test_dataset)}")
+        print(f"\tX_test shape: {self.X_test.shape}", f"y_test shape: {self.y_test.shape}")
+        
         test_loader = DataLoader(
             test_dataset,
             batch_size=self.batch_size,
