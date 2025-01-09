@@ -29,7 +29,7 @@ seed_everything(1, workers=True)
 # Hyperparameters
 p = dict(
     seq_len=14,  # Sequence length for input data
-    batch_size=16,  # Batch size for training
+    batch_size=14,  # Batch size for training
     criterion=nn.MSELoss(),  # Loss function
     max_epochs=100,  # Maximum number of training epochs
     n_features=1,  # Number of input features
@@ -38,7 +38,7 @@ p = dict(
     num_workers=0,  # Number of data loader workers
     dropout=0.2,  # Dropout rate for regularization
     learning_rate=0.1,  # Learning rate for the optimizer
-    output_size=14,  # Update the output size to 14
+    output_size=1,  # Update the output size to 14
     run_test=True,  # Run test after training
     log_dir="logs",  # Directory for logs
     experiment_name="experiment",  # Experiment name
@@ -46,7 +46,7 @@ p = dict(
     metrics_dir="metrics",  # Directory for metrics
     train_val_data_path="../../data/transformed/influenza_features_train_val.parquet",  # Path to the data file
     test_data_path="../../data/transformed/influenza_features_test.parquet",
-    nums_splits=2,  # Number of splits for walk forward validation 
+    nums_splits=1,  # Number of splits for walk forward validation 
     debug=False,  # Debug mode
 )
 
@@ -114,16 +114,22 @@ def validate_params(params):
         "test_data_path": (str, lambda x: len(x) > 0),
         "nums_splits": (int, lambda x: x >= 1),
     }
+    errors = []
     for key, (expected_type, condition) in required_keys.items():
         if key not in params:
-            logger.error(f"Missing required parameter: {key}")
-            raise ValueError(f"Missing required parameter: {key}")
-        if not isinstance(params[key], expected_type):
-            logger.error(f"Invalid type for parameter {key}: {type(params[key])}")
-            raise ValueError(f"Invalid type for parameter {key}: {type(params[key])}")
-        if not condition(params[key]):
-            logger.error(f"Invalid value for parameter {key}: {params[key]}")
-            raise ValueError(f"Invalid value for parameter {key}: {params[key]}")
+            errors.append(f"Missing required parameter: {key}")
+        elif not isinstance(params[key], expected_type):
+            errors.append(f"Invalid type for parameter {key}: Expected {expected_type.__name__}, got {type(params[key]).__name__}")
+        elif not condition(params[key]):
+            errors.append(f"Invalid value for parameter {key}: {params[key]}")
+
+    if errors:
+        table = Table(title="Parameter Validation Errors")
+        table.add_column("Error", justify="left", style="bold red")
+        for error in errors:
+            table.add_row(error)
+        console.print(table)
+        raise ValueError("Parameter validation failed. See errors above.")
 
 validate_params(p)
 

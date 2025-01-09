@@ -107,6 +107,7 @@ def main():
         learning_rate=p["learning_rate"],
         batch_size=p["batch_size"],  # Pass batch_size to the model
         output_size=p["output_size"],
+        debug=p["debug"],
     )
 
         # Log model summary
@@ -136,7 +137,7 @@ def main():
 
     # Train the model
     console.print("Training has started!", style="bold cyan")
-    trainer.fit(model, dm)
+    trainer.fit(model, dm,)
 
     # # Log training and validation metrics
     # train_loss = trainer.callback_metrics.get("train_loss", 0.0)

@@ -2,13 +2,12 @@
 import lightning as L
 import torch
 from torch import nn
-
+from config import logger
 from torchmetrics.regression import MeanAbsoluteError, MeanSquaredError, R2Score, MeanAbsolutePercentageError
 
 class LSTMRegressor(L.LightningModule):
     """
     Standard PyTorch Lightning module:
-    https://pytorch-lightning.readthedocs.io/en/latest/lightning_module.html
     LSTM-based regressor implemented as a PyTorch Lightning Module.
     Suitable for sequence modeling tasks with numerical outputs.
     """
@@ -21,8 +20,9 @@ class LSTMRegressor(L.LightningModule):
         dropout: float,
         learning_rate: float,
         criterion: nn.Module,
-        batch_size: int,  # Add batch_size as a hyperparameter
+        # batch_size: int,  # Add batch_size as a hyperparameter
         output_size: int = 14,  # Update output_size to 14
+        debug: bool = False,
         **kwargs,
     ):
         super(LSTMRegressor, self).__init__()
@@ -33,6 +33,7 @@ class LSTMRegressor(L.LightningModule):
         self.criterion = criterion
         self.save_hyperparameters(ignore=["criterion"])
         self.learning_rate = learning_rate
+        self.debug = debug  
 
         # Initialize metrics
         self.mae = MeanAbsoluteError()
@@ -69,14 +70,11 @@ class LSTMRegressor(L.LightningModule):
         """
         Forward pass with stateful hidden and cell states.
         """
-        # print("Forward pass called.")
-        # print(f"Size of X {x.size()}")
         if self.h0 is None or self.c0 is None:
             self.reset_states(x.size(0))
         lstm_out, (h0, c0) = self.lstm(x, (self.h0.to(x.device), self.c0.to(x.device)))
         (self.h0, self.c0) = (h0.detach(), c0.detach())
         y_pred = self.fc(lstm_out[:, -1])
-
         return y_pred
 
 
@@ -113,11 +111,16 @@ class LSTMRegressor(L.LightningModule):
         Returns:
             torch.Tensor: Training loss.
         """
-        print("-----------------    -----------------")
-        print("Training step: Start.")
-        print("-----------------    -----------------")
+        if self.debug:
+            logger.debug("Training step: Start.")
         x, y = batch
 
+        if self.debug:
+            logger.debug(f"Batch : {batch_idx} X shape: {x.shape}, Y shape: {y.shape}")
+
+            # if batch_idx == 0 or batch_idx == 34:
+            #     logger.debug(f"{x[-5:]}")
+            #     logger.debug(f"{y[-5:]}")
         y_hat = self.forward(x)
 
         # Compute the loss
@@ -133,6 +136,8 @@ class LSTMRegressor(L.LightningModule):
         self.log("batch_loss", loss.item(), on_step=True, on_epoch=False)
         self.log("train_loss", loss.item(), on_step=False, on_epoch=True)
 
+        if self.debug:
+            logger.debug(f"Training loss: {loss.item()}")
         # Return only the loss
         return loss
 
@@ -145,9 +150,8 @@ class LSTMRegressor(L.LightningModule):
         Returns:
             torch.Tensor: Validation loss.
         """
-        print("-----------------    -----------------")
-        print("Validation step: Start.")
-        print("-----------------    -----------------")
+        if self.debug:
+            logger.debug("Validation step: Start.")
         x, y = batch
 
         y_hat = self.forward(x)
@@ -177,6 +181,9 @@ class LSTMRegressor(L.LightningModule):
         self.log("val_r2", val_r2.item(), on_step=False, on_epoch=True)
         self.log("val_mape", val_mape.item(), on_step=False, on_epoch=True)
 
+        if self.debug:  
+            logger.debug(f"Validation loss: {loss.item()}")
+
         return loss
 
     def test_step(self, batch, batch_idx):
@@ -188,10 +195,17 @@ class LSTMRegressor(L.LightningModule):
         Returns:
             torch.Tensor: Test loss.
         """
-        print("Test step called.")
+        if self.debug:
+            logger.debug("Test step: Start.")
         x, y = batch
 
+        if self.debug or True:
+            logger.debug(f"Batch : {batch_idx} X shape: {x.shape}, Y shape: {y.shape}")
+
         y_hat = self.forward(x)
+
+        if self.debug or True:
+            logger.debug(f"Y_hat shape: {y_hat.shape}")
 
         # Calculate the loss
         loss = self.criterion(y_hat, y)
@@ -215,7 +229,9 @@ class LSTMRegressor(L.LightningModule):
         self.log("test_mape", test_mape.item(), on_step=False, on_epoch=True)
         # Log mean of residuals
         self.log("test_residuals_mean", residuals.mean(), on_step=False, on_epoch=True)
+        if self.debug:
 
+            logger.debug(f"Test loss: {loss.item()}")
         return loss
 
 
