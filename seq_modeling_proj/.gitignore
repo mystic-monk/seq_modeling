@@ -163,6 +163,7 @@ cython_debug/
 
 # Project specific
 data/
+vx_archive/
 mlruns/
 metrics/
 predictions/
