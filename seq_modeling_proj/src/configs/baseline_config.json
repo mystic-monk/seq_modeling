@@ -1,0 +1,38 @@
+{
+    "seed": 303,
+    "hidden_size": 128,
+    "num_layers": 3,
+    "num_workers": 0,
+    "dropout": 0.26478,
+
+    "seq_len": 14,
+    "batch_size": 14,
+    "max_epochs": 200,
+    "n_features": 6,
+    "learning_rate": 0.3,
+    "output_size": 14,
+    
+    "data_columns": [
+        "event_creation_date", "log_cases_14d_moving_avg",
+        "lag_1d", "lag_7d", "lag_14d",
+        "weekday_sin", "annual_sin"
+    ],
+
+    "paths": {
+        "train_val_data": "../../data/transformed/influenza_features_train_val.parquet",
+        "test_data": "../../data/transformed/influenza_features_test.parquet",
+        "log_dir": "logs",
+        "log_file": "training.log",
+        "model_dir": "models",
+        "optuna_db_dir": "optuna_studies",
+        "best_model_name": "best_model.pth",
+        "optuna_db_name": "optuna_lstm.db",
+        "model_parameters_name": "best_hyperparameters.json"
+    },
+
+    "experiment": {
+        "name": "experiment",
+        "version": "02"
+    },
+    "criterion": "MSELoss"
+}
