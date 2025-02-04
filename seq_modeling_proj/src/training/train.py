@@ -4,24 +4,27 @@ import os
 # Third-party imports
 import torch
 import torch.nn as nn
-
+import mlflow
+import mlflow.pytorch
 
 # Local application imports
 from utils.logging_setup import get_logger, train_val_data_path
 from models.lstm import LSTMRegressor
-from utils.config_loader import load_config
+# from utils.config_loader import load_config
+from utils.config_setup import p
 from data_pipeline.dataloader.data_loaders import train_dataloader, val_dataloader
 from data_pipeline.preprocessing.data_preprocessing import scale_data, load_and_preprocess_data
 from data_pipeline.preprocessing.expanding_window import ExpandingWindow
-
+from utils.mlflow_setup import setup_mlflow
 
 # Get the logger from the centralized setup
 logger = get_logger()
 
-p = load_config()
+# p = load_config()
+# Initialize MLflow
+setup_mlflow()
 
-
-model_dir = p["paths"]["model_dir"]
+model_dir = p["experiment_dirs"]["checkpoints_dir"]
 
 def r2_score(y_pred, y_true):
     ss_total = torch.sum((y_true - torch.mean(y_true, dim=0)) ** 2, dim=0)
@@ -45,13 +48,7 @@ def mse_loss(y_pred, y_true):
 
 def run_training(model, train_loader, val_loader, num_epochs, device,  split_idx, best_val_loss = float("inf"), patience=50):
     """
-    Custom training loop for the LSTMRegressor model.
-
-    Args:
-        model (LSTMRegressor): The model to train.
-        datamodule (LineListingDataModule): The datamodule containing data loaders.
-        num_epochs (int): Number of epochs to train for.
-        device (torch.device): Device to train on (CPU or GPU).
+    Train the LSTM model while logging metrics and saving the best model with MLflow.
     """
     # Move model to the specified device
     model.to(device)
@@ -63,91 +60,104 @@ def run_training(model, train_loader, val_loader, num_epochs, device,  split_idx
 
 
     logger.info("[bold magenta]🚀 Starting training...[/bold magenta]")
-    # best_val_loss = float("inf") 
+
     epochs_no_improve = 0 
-
-    # Initialize best_model_weights to None
     best_model_weights = None
-
     prev_best_weights = model.state_dict()
 
-    # Training loop
-    for epoch in range(num_epochs):
-        logger.info(f"[bold yellow]Epoch {epoch+1}/{num_epochs}[/bold yellow]")
-        model.train()
-        train_loss = 0.0
 
-        for batch_idx, (x, y) in enumerate(train_loader):
-            x, y = x.to(device), y.to(device)
+    # 🎯 Start MLflow experiment for this split
+    with mlflow.start_run(run_name=f"Expanding_Window_Split_{split_idx}") as run:
+        mlflow.log_params({
+            "learning_rate": optimizer.param_groups[0]['lr'],
+            "batch_size": train_loader.batch_size,
+            "num_layers": model.num_layers,
+            "hidden_size": model.hidden_size,
+            "dropout": model.dropout,
+            "criterion": str(model.criterion),
+            "sequence_length": train_loader.dataset.seq_len
+                               
+        })
 
-            # Forward pass
-            y_pred = model(x)
+        # Training loop
+        for epoch in range(num_epochs):
+            logger.info(f"[bold yellow]Epoch {epoch+1}/{num_epochs}[/bold yellow]")
+            model.train()
+            train_loss = 0.0
 
-            # Compute loss
-            loss = model.criterion(y_pred, y)
-            
-            # Backward pass and optimization
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-            train_loss += loss.item()
- 
-
-        train_loss /= len(train_loader)
-        print(f"Training Loss: {train_loss:.4f}", end="\r")
-
-        # Validation loop
-        model.eval()
-        val_loss = 0.0
-        with torch.no_grad():
-            for x, y in val_loader:
+            for batch_idx, (x, y) in enumerate(train_loader):
                 x, y = x.to(device), y.to(device)
+
+                # Forward pass
                 y_pred = model(x)
                 loss = model.criterion(y_pred, y)
-                val_loss += loss.item()
+                
+                # Backward pass and optimization
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
-        val_loss /= len(val_loader)
-        # print(f"Validation Loss: {val_loss:.4f}")
-        
+                train_loss += loss.item()
+    
+
+            train_loss /= len(train_loader)
+            # print(f"Training Loss: {train_loss:.4f}", end="\r")
+
+            # Validation loop
+            model.eval()
+            val_loss = 0.0
+            with torch.no_grad():
+                for x, y in val_loader:
+                    x, y = x.to(device), y.to(device)
+                    y_pred = model(x)
+                    loss = model.criterion(y_pred, y)
+                    val_loss += loss.item()
+
+            val_loss /= len(val_loader)
+
+            # 🎯 Log training & validation loss
+            mlflow.log_metric("train_loss", train_loss, step=epoch)
+            mlflow.log_metric("val_loss", val_loss, step=epoch)
+
+            # Check for improvement
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                epochs_no_improve = 0 
+                best_model_weights = model.state_dict()
+
+                # Save the best model weights
+                logger.info(f"Best model weights saved at epoch {epoch+1} with validation loss {val_loss:.4f}")
+                # Create dynamic save path
+                current_lr = optimizer.param_groups[0]['lr']
+                # Update the filename with the current epoch and validation loss
+                filename = (
+                    f"ew_split_{split_idx:02}"
+                    f"_epoch_{epoch+1:03}"
+                    f"_model_lstm_lr_{current_lr:.6f}_loss_{val_loss:.4f}"
+                    f"_batch_{p['batch_size']}_layers_{p['num_layers']}_dropout_{p['dropout']}"
+                    f".pth")
+
+                torch.save(model.state_dict(), os.path.join(model_dir, filename))
+
+                # 🎯 Log model to MLflow
+                mlflow.pytorch.log_model(model, f"best_model_split_{split_idx}")
+
+                logger.info(f"[bold green]✅ New best model saved at epoch {epoch+1} with validation loss {val_loss:.4f}[/bold green]")
+            else:
+                epochs_no_improve += 1
+                logger.info(f"No improvement for {epochs_no_improve}/{patience} epochs.")
 
 
-
-
-        # Check for improvement
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
-            epochs_no_improve = 0  # Reset counter
+            logger.info(f"[bold cyan]📊 Split: {split_idx+1} | Epoch: {epoch+1} | T Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Best Loss: {best_val_loss:.4f}[/bold cyan]")
             
-            best_model_weights = model.state_dict()
-            logger.info(f"Best model weights saved at epoch {epoch+1} with validation loss {val_loss:.4f}")
-            # Create dynamic save path
-            current_lr = optimizer.param_groups[0]['lr']
-            # Update the filename with the current epoch and validation loss
-            filename = (
-                f"ew_split_{split_idx:02}"
-                f"_epoch_{epoch+1:03}"
-                f"_model_lstm_lr_{current_lr:.6f}_loss_{val_loss:.4f}"
-                f"_batch_{p['batch_size']}_layers_{p['num_layers']}_dropout_{p['dropout']}"
-                f".pth")
+            # Step the scheduler
+            scheduler.step(val_loss)
 
-            torch.save(model.state_dict(), os.path.join(model_dir, filename))
-            logger.info(f"[bold green]✅ New best model saved at epoch {epoch+1} with validation loss {val_loss:.4f}[/bold green]")
-        else:
-            epochs_no_improve += 1
-            logger.info(f"No improvement for {epochs_no_improve}/{patience} epochs.")
-
-
-        logger.info(f"[bold cyan]📊 Split: {split_idx} | Epoch: {epoch+1} | T Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Best Loss: {best_val_loss:.4f}[/bold cyan]")
-        
-        # Step the scheduler
-        scheduler.step(val_loss)
-
-        # Stop training if patience is exceeded
-        if epochs_no_improve >= patience:
-        
-            logger.debug("[bold red]🛑 Early stopping triggered. Training stopped.[/bold red]")
-            break
+            # Stop training if patience is exceeded
+            if epochs_no_improve >= patience:
+            
+                logger.debug("[bold red]🛑 Early stopping triggered. Training stopped.[/bold red]")
+                break
 
 
 

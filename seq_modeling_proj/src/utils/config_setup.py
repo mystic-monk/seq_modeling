@@ -26,10 +26,13 @@ torch.backends.cudnn.benchmark = False
 if isinstance(p["criterion"], str):  
     p["criterion"] = getattr(nn, p["criterion"])()
 
-# ✅ Ensure necessary directories exist
-for path_key in ["log_dir", "optuna_db_dir"]:
-    if path_key in p["paths"]:
-        os.makedirs(p["paths"][path_key], exist_ok=True)
+# ✅ Ensure necessary directories exist (updated to handle exp_dirs)
+exp_dirs = p.get("experiment_dirs", {})
+for dir_key in exp_dirs:
+    dir_path = exp_dirs.get(dir_key)
 
+    if dir_path:
+        os.makedirs(dir_path, exist_ok=True)
+        logger.info(f"Directory created or already exists: {dir_path}")
 
 logger.info("[bold green]Configuration Setup Completed![/bold green]")

@@ -21,17 +21,24 @@
     "paths": {
         "train_val_data": "../../data/transformed/influenza_features_train_val.parquet",
         "test_data": "../../data/transformed/influenza_features_test.parquet",
-        "log_dir": "logs",
-        "log_file": "training.log",
-        "model_dir": "models",
-        "optuna_db_dir": "optuna_studies",
+        "log_file": "training.log",       
         "best_model_name": "best_model.pth",
         "optuna_db_name": "optuna_lstm.db",
         "model_parameters_name": "best_hyperparameters.json"
+    
+    },
+    
+    "experiment_dirs": {
+        "checkpoints_dir": "../experiments/checkpoints",
+        "log_dir": "../experiments/logs",
+        "optuna_db_dir": "../experiments/optuna_studies",
+        "metrics_dir": "../experiments/metrics",
+        "mlflow_runs_dir": "../experiments/mlflow_runs"
     },
 
     "experiment": {
-        "name": "experiment",
+        "experiment_name": "LSTM_Expanding_Window",
+        "tracking_dir": "../experiments/mlflow_runs",
         "version": "02"
     },
     "criterion": "MSELoss"

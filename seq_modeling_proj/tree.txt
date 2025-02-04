@@ -7,12 +7,320 @@ C:.
 |   tree.txt
 |   
 +---experiments
+|   +---checkpoints
+|   |       ew_split_00_epoch_001_model_lstm_lr_0.300000_loss_9.0151_batch_14_layers_3_dropout_0.26478.pth
+|   |       ew_split_00_epoch_001_model_lstm_lr_0.300000_loss_9.0502_batch_14_layers_3_dropout_0.26478.pth
+|   |       ew_split_00_epoch_002_model_lstm_lr_0.300000_loss_4.8281_batch_14_layers_3_dropout_0.26478.pth
+|   |       ew_split_00_epoch_002_model_lstm_lr_0.300000_loss_4.8575_batch_14_layers_3_dropout_0.26478.pth
+|   |       ew_split_00_epoch_003_model_lstm_lr_0.300000_loss_0.3333_batch_14_layers_3_dropout_0.26478.pth
+|   |       ew_split_00_epoch_003_model_lstm_lr_0.300000_loss_0.3350_batch_14_layers_3_dropout_0.26478.pth
+|   |       ew_split_00_epoch_004_model_lstm_lr_0.300000_loss_0.1026_batch_14_layers_3_dropout_0.26478.pth
+|   |       ew_split_00_epoch_004_model_lstm_lr_0.300000_loss_0.1169_batch_14_layers_3_dropout_0.26478.pth
+|   |       ew_split_05_epoch_001_model_lstm_lr_0.300000_loss_0.0489_batch_14_layers_3_dropout_0.26478.pth
+|   |       ew_split_06_epoch_010_model_lstm_lr_0.300000_loss_0.0888_batch_14_layers_3_dropout_0.26478.pth
+|   |       ew_split_06_epoch_012_model_lstm_lr_0.300000_loss_0.0853_batch_14_layers_3_dropout_0.26478.pth
+|   |       ew_split_12_epoch_018_model_lstm_lr_0.003000_loss_0.0408_batch_14_layers_3_dropout_0.26478.pth
+|   |       ew_split_12_epoch_019_model_lstm_lr_0.003000_loss_0.0284_batch_14_layers_3_dropout_0.26478.pth
+|   |       ew_split_12_epoch_020_model_lstm_lr_0.003000_loss_0.0246_batch_14_layers_3_dropout_0.26478.pth
+|   |       ew_split_12_epoch_021_model_lstm_lr_0.003000_loss_0.0243_batch_14_layers_3_dropout_0.26478.pth
+|   |       ew_split_19_epoch_019_model_lstm_lr_0.003000_loss_0.0113_batch_14_layers_3_dropout_0.26478.pth
+|   |       ew_split_19_epoch_020_model_lstm_lr_0.003000_loss_0.0111_batch_14_layers_3_dropout_0.26478.pth
+|   |       
 |   +---logs
-|   +---models
+|   |       training.log
+|   |       
+|   +---metrics
+|   +---mlflow_runs
+|   |   +---.trash
+|   |   \---245727688741440195
+|   |       |   meta.yaml
+|   |       |   
+|   |       +---081d51eea1034f09a668cebad66986e2
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   +---metrics
+|   |       |   |       train_loss
+|   |       |   |       val_loss
+|   |       |   |       
+|   |       |   +---params
+|   |       |   |       batch_size
+|   |       |   |       criterion
+|   |       |   |       dropout
+|   |       |   |       hidden_size
+|   |       |   |       learning_rate
+|   |       |   |       num_layers
+|   |       |   |       sequence_length
+|   |       |   |       
+|   |       |   \---tags
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       +---25682507bafb401aa3d30e04fc265937
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   +---metrics
+|   |       |   +---params
+|   |       |   \---tags
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       +---2bd3482a558646c897787a9215f55393
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   +---metrics
+|   |       |   +---params
+|   |       |   \---tags
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       +---394f983023a4428f8255955c0299486d
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   +---metrics
+|   |       |   |       train_loss
+|   |       |   |       val_loss
+|   |       |   |       
+|   |       |   +---params
+|   |       |   |       batch_size
+|   |       |   |       criterion
+|   |       |   |       dropout
+|   |       |   |       hidden_size
+|   |       |   |       learning_rate
+|   |       |   |       num_layers
+|   |       |   |       sequence_length
+|   |       |   |       
+|   |       |   \---tags
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       +---8f8a89850bae4e398249ff2681f71194
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   +---metrics
+|   |       |   +---params
+|   |       |   \---tags
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       +---94d5fed4dd344bbe9d0e7b263acc6dca
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   +---metrics
+|   |       |   |       train_loss
+|   |       |   |       val_loss
+|   |       |   |       
+|   |       |   +---params
+|   |       |   |       batch_size
+|   |       |   |       criterion
+|   |       |   |       dropout
+|   |       |   |       hidden_size
+|   |       |   |       learning_rate
+|   |       |   |       num_layers
+|   |       |   |       sequence_length
+|   |       |   |       
+|   |       |   \---tags
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       +---9b274671439a49729adf459b284436a8
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   +---metrics
+|   |       |   |       train_loss
+|   |       |   |       val_loss
+|   |       |   |       
+|   |       |   +---params
+|   |       |   |       batch_size
+|   |       |   |       criterion
+|   |       |   |       dropout
+|   |       |   |       hidden_size
+|   |       |   |       learning_rate
+|   |       |   |       num_layers
+|   |       |   |       sequence_length
+|   |       |   |       
+|   |       |   \---tags
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       +---9d2e9d4565c94a6c95561242ed57cbfd
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   |   \---best_model_split_0
+|   |       |   |       |   conda.yaml
+|   |       |   |       |   MLmodel
+|   |       |   |       |   python_env.yaml
+|   |       |   |       |   requirements.txt
+|   |       |   |       |   
+|   |       |   |       \---data
+|   |       |   |               model.pth
+|   |       |   |               pickle_module_info.txt
+|   |       |   |               
+|   |       |   +---metrics
+|   |       |   |       train_loss
+|   |       |   |       val_loss
+|   |       |   |       
+|   |       |   +---params
+|   |       |   |       batch_size
+|   |       |   |       criterion
+|   |       |   |       dropout
+|   |       |   |       hidden_size
+|   |       |   |       learning_rate
+|   |       |   |       num_layers
+|   |       |   |       sequence_length
+|   |       |   |       
+|   |       |   \---tags
+|   |       |           mlflow.log-model.history
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       +---b598eb1a85264178965e0fe9c32d73f9
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   +---metrics
+|   |       |   |       train_loss
+|   |       |   |       val_loss
+|   |       |   |       
+|   |       |   +---params
+|   |       |   |       batch_size
+|   |       |   |       criterion
+|   |       |   |       dropout
+|   |       |   |       hidden_size
+|   |       |   |       learning_rate
+|   |       |   |       num_layers
+|   |       |   |       sequence_length
+|   |       |   |       
+|   |       |   \---tags
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       +---bbb0ba28c36c42c4ae4d5ebdfcc1091b
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   |   \---best_model_split_6
+|   |       |   |       |   conda.yaml
+|   |       |   |       |   MLmodel
+|   |       |   |       |   python_env.yaml
+|   |       |   |       |   requirements.txt
+|   |       |   |       |   
+|   |       |   |       \---data
+|   |       |   |               model.pth
+|   |       |   |               pickle_module_info.txt
+|   |       |   |               
+|   |       |   +---metrics
+|   |       |   |       train_loss
+|   |       |   |       val_loss
+|   |       |   |       
+|   |       |   +---params
+|   |       |   |       batch_size
+|   |       |   |       criterion
+|   |       |   |       dropout
+|   |       |   |       hidden_size
+|   |       |   |       learning_rate
+|   |       |   |       num_layers
+|   |       |   |       sequence_length
+|   |       |   |       
+|   |       |   \---tags
+|   |       |           mlflow.log-model.history
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       +---bfadf932c6e949d3a749a85308737bfa
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   +---metrics
+|   |       |   +---params
+|   |       |   \---tags
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       +---f52121e257f74f099dc7ba1c5579c186
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   +---metrics
+|   |       |   |       train_loss
+|   |       |   |       val_loss
+|   |       |   |       
+|   |       |   +---params
+|   |       |   |       batch_size
+|   |       |   |       criterion
+|   |       |   |       dropout
+|   |       |   |       hidden_size
+|   |       |   |       learning_rate
+|   |       |   |       num_layers
+|   |       |   |       sequence_length
+|   |       |   |       
+|   |       |   \---tags
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       \---f9b032409e204017abfcde2ad422d536
+|   |           |   meta.yaml
+|   |           |   
+|   |           +---artifacts
+|   |           +---metrics
+|   |           +---params
+|   |           \---tags
+|   |                   mlflow.runName
+|   |                   mlflow.source.git.commit
+|   |                   mlflow.source.name
+|   |                   mlflow.source.type
+|   |                   mlflow.user
+|   |                   
 |   \---optuna_studies
-+---logs
-|       logs.log
-|       
++---mlruns
+|   +---.trash
+|   +---0
+|   |       meta.yaml
+|   |       
+|   \---models
 +---notebooks
 |       test.ipynb
 |       
@@ -58,19 +366,20 @@ C:.
 |   |           
 |   +---training
 |   |   |   train.py
+|   |   |   __init__.py
 |   |   |   
-|   |   +---logs
-|   |   |       logs.log
-|   |   |       
-|   |   +---models
-|   |   \---optuna_studies
-|   +---tuning
+|   |   +---optuna_studies
+|   |   \---__pycache__
+|   |           train.cpython-311.pyc
+|   |           __init__.cpython-311.pyc
+|   |           
 |   \---utils
 |       |   config_loader.py
 |       |   config_setup.py
 |       |   logger.py
 |       |   logger_utils.py
 |       |   logging_setup.py
+|       |   mlflow_setup.py
 |       |   __init__.py
 |       |   
 |       \---__pycache__
@@ -79,6 +388,7 @@ C:.
 |               logger.cpython-311.pyc
 |               logger_utils.cpython-311.pyc
 |               logging_setup.cpython-311.pyc
+|               mlflow_setup.cpython-311.pyc
 |               __init__.cpython-311.pyc
 |               
 \---tests

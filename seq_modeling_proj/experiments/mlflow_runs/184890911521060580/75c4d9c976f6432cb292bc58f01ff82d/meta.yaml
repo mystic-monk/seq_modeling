@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/dev/Python/seq_modeling/seq_modeling_proj/src/../experiments/mlflow_runs/184890911521060580/75c4d9c976f6432cb292bc58f01ff82d/artifacts
+end_time: 1738673436276
+entry_point_name: ''
+experiment_id: '184890911521060580'
+lifecycle_stage: active
+run_id: 75c4d9c976f6432cb292bc58f01ff82d
+run_name: Expanding_Window_Split_17
+run_uuid: 75c4d9c976f6432cb292bc58f01ff82d
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1738673388298
+status: 3
+tags: []
+user_id: NDSC+ankush.arya
