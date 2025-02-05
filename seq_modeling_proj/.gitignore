@@ -172,13 +172,11 @@ archive/
 logs/
 .csv
 .parquet
-checkpoints/
 notebooks/
 .vscode/
 test.ipynb
 __pycache__/
 seq_modeling_proj/__pycache__/
-seq_modeling_proj/checkpoints/
-seq_modeling_proj/tb_logs/
+seq_modeling_proj/experiments/
 .db
 .csv
