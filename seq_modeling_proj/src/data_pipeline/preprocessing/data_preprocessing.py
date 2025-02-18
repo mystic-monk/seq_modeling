@@ -2,10 +2,9 @@
 
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
-from utils.logger_utils import logger
 import numpy as np
-
-def load_and_preprocess_data(data_path, data_columns, seq_len):
+# import joblib
+def load_and_preprocess_data(data_path, data_columns, seq_len, logger):
     """
     Load and preprocess the data.
     """
@@ -23,23 +22,19 @@ def load_and_preprocess_data(data_path, data_columns, seq_len):
     return X, y
 
 def scale_data(X, y):
-    """
-    Scales the training, validation, and test data using StandardScaler.
+    """Handle both DataFrame and array inputs"""
+    if isinstance(X, pd.DataFrame):
+        X = X.values
+    if isinstance(y, pd.Series):
+        y = y.values
+
     
-    Args:
-        X_train (np.ndarray): Training data
-        X_val (np.ndarray): Validation data
-        X_test (np.ndarray): Test data
-        
-    Returns:
-        Tuple[np.ndarray, np.ndarray, np.ndarray]: Scaled training, validation, and test data
-    """
-    preprocessing = StandardScaler()
-    preprocessing.fit(X)
-    scaled_X = preprocessing.transform(X)
+    scaler = StandardScaler()
+    scaler.fit(X)
+    scaled_X = scaler.transform(X)
     scaled_y = np.array(y)
     
-    return scaled_X, scaled_y
+    return scaled_X, scaled_y, scaler
 
 
 def split_data(X, y, window_size):

@@ -1,230 +1,294 @@
 # Standard library imports
-import os
-
+import pandas as pd 
 # Third-party imports
 import torch
-import torch.nn as nn
-import mlflow
-import mlflow.pytorch
-
+# import torch.nn as nn
+import time
+from pathlib import Path
+from datetime import datetime
+import psutil
 # Local application imports
-from utils.logging_setup import get_logger, train_val_data_path
+from utils.data.data_utils import train_val_data_path
+
 from models.lstm import LSTMRegressor
-# from utils.config_loader import load_config
-from utils.config_setup import p
+import os 
+from utils.config.config_setup import config, logger
+
 from data_pipeline.dataloader.data_loaders import train_dataloader, val_dataloader
 from data_pipeline.preprocessing.data_preprocessing import scale_data, load_and_preprocess_data
 from data_pipeline.preprocessing.expanding_window import ExpandingWindow
-from utils.mlflow_setup import setup_mlflow
+from utils.metrics import r2_score, mse_loss
 
-# Get the logger from the centralized setup
-logger = get_logger()
+def train_one_epoch(model:LSTMRegressor, train_loader, optimizer, device):
+    """Runs one epoch of training and returns the average training loss."""
+    model.train()
+    train_loss = 0.0
+    model.reset_states()
+    gradient_norms = []
 
-# p = load_config()
-# Initialize MLflow
-setup_mlflow()
+    for x, y in train_loader:
+        x, y = x.to(device), y.to(device)
 
-model_dir = p["experiment_dirs"]["checkpoints_dir"]
+        optimizer.zero_grad()
+        y_pred = model(x)
+        loss = model.criterion(y_pred, y)
+        loss.backward()
+        
+       # Gradient monitoring
+        total_norm = 0
+        for p in model.parameters():
+            if p.grad is not None:
+                param_norm = p.grad.data.norm(2)
+                total_norm += param_norm.item() ** 2
+        gradient_norms.append(total_norm ** 0.5)
 
-def r2_score(y_pred, y_true):
-    ss_total = torch.sum((y_true - torch.mean(y_true, dim=0)) ** 2, dim=0)
-    ss_residual = torch.sum((y_true - y_pred) ** 2, dim=0)
-    r2_per_feature = 1 - (ss_residual / (ss_total + 1e-8))  # Avoid division by zero
-    return torch.mean(r2_per_feature)  # Average across all output features
+        optimizer.step()
+        train_loss += loss.item()
 
-def mse_loss(y_pred, y_true):
-    """
-    Compute Mean Squared Error (MSE) loss manually for vector outputs.
+    return {
+    "train_loss": train_loss / len(train_loader),
+    "avg_grad_norm": sum(gradient_norms) / len(gradient_norms),
+    "max_grad_norm": max(gradient_norms)
+    }
+
+
+def validate(model:LSTMRegressor, val_loader, device):
+    """Runs validation and returns validation loss, R2 score, MSE, and RMSE."""
+    model.eval()
+    val_loss = 0.0
+    y_preds, y_trues = [], []
+
+    with torch.no_grad():
+        for x, y in val_loader:
+            x, y = x.to(device), y.to(device)
+            y_pred = model(x)
+            loss = model.criterion(y_pred, y)
+
+            val_loss += loss.item()
+            y_preds.append(y_pred)
+            y_trues.append(y)
+
+    y_preds = torch.cat(y_preds, dim=0)
+    y_trues = torch.cat(y_trues, dim=0)
+    val_loss /= len(val_loader)
+
+    # return val_loss, r2_score(y_preds, y_trues), mse_loss(y_preds, y_trues)
+    return {
+        "val_loss": val_loss,
+        "r2": r2_score(y_preds, y_trues).item(),
+        "mse": mse_loss(y_preds, y_trues).item(),
+        "rmse": torch.sqrt(mse_loss(y_preds, y_trues)).item(),
+        "y_preds": y_preds.cpu().numpy(),
+        "y_trues": y_trues.cpu().numpy()
+    }
+
+def save_artifacts(metrics_dir, split_idx, epoch, results, config):
+    """Save all training artifacts to structured CSV files"""
+    # Save metrics
+    metrics_path = metrics_dir / f"split_{split_idx:02}_metrics.csv"
+    pd.DataFrame([results]).to_csv(metrics_path, mode='a', 
+                                 header=not os.path.exists(metrics_path),
+                                 index=False)
     
-    Args:
-        y_pred (torch.Tensor): Predicted values of shape [batch_size, output_size]
-        y_true (torch.Tensor): Ground truth values of shape [batch_size, output_size]
+    # Save predictions
+    preds_df = pd.DataFrame({
+        "y_true": results["y_trues"].flatten(),
+        "y_pred": results["y_preds"].flatten()
+    })
+    preds_path = metrics_dir / f"split_{split_idx:02}_epoch_{epoch:03}_predictions.csv"
+    preds_df.to_csv(preds_path, index=False)
     
-    Returns:
-        torch.Tensor: Scalar MSE loss
-    """
-    return torch.mean((y_pred - y_true) ** 2)  # Computes MSE over all elements
+    # Save config once
+    # if epoch == 0 and split_idx == 0:
+    #     config_path = metrics_dir / "training_config.json"
+    #     pd.DataFrame([config]).to_json(config_path)
 
-
-def run_training(model, train_loader, val_loader, num_epochs, device,  split_idx, best_val_loss = float("inf"), patience=50):
-    """
-    Train the LSTM model while logging metrics and saving the best model with MLflow.
-    """
+def run_training(metrics_dir: str, checkpoints_dir, model:LSTMRegressor, train_loader, val_loader, 
+                 num_epochs, device,  split_idx, scaler, patience=50):
+    """Enhanced training loop with comprehensive tracking"""
+    
     # Move model to the specified device
     model.to(device)
-    if isinstance(model.criterion, str):
-        model.criterion = getattr(nn, model.criterion)()
-    
-    # Configure optimizer and scheduler
-    optimizer, scheduler = model.configure_optimizers().values()
-
-
-    logger.info("[bold magenta]🚀 Starting training...[/bold magenta]")
+    optim_config = model.configure_optimizers()
+    optimizer = optim_config["optimizer"]
+    scheduler = optim_config["scheduler"]
 
     epochs_no_improve = 0 
-    best_model_weights = None
-    prev_best_weights = model.state_dict()
+    best_val_loss = float("inf")
 
 
-    # 🎯 Start MLflow experiment for this split
-    with mlflow.start_run(run_name=f"Expanding_Window_Split_{split_idx}") as run:
-        mlflow.log_params({
-            "learning_rate": optimizer.param_groups[0]['lr'],
-            "batch_size": train_loader.batch_size,
-            "num_layers": model.num_layers,
+    # history = {"train_loss": [], "val_loss": [], "r2_score": [], "val_mse": [], "val_rmse": [], "lr": []}
+    history = []
+    logger.info("[bold magenta]🚀 Starting training...[/bold magenta]")
+
+    # Training loop
+    for epoch in range(num_epochs):
+        epoch_start = time.time()
+        logger.info(f"[bold yellow]Epoch {epoch+1}/{num_epochs}[/bold yellow]")
+
+        # Training phase
+        train_metrics = train_one_epoch(model, train_loader, optimizer, device)
+        
+        # Validation phase
+        val_results = validate(model, val_loader, device)
+  
+        # Learning rate tracking
+        current_lr = optimizer.param_groups[0]['lr']
+        
+        # Memory monitoring
+        memory_used = torch.cuda.max_memory_allocated(device) / (1024 ** 3) if torch.cuda.is_available() else 0
+
+        # Build results dictionary
+        epoch_results = {
+            "split_idx": split_idx,
+            "epoch": epoch,
+            "timestamp": datetime.now().isoformat(),
+            "epoch_duration": time.time() - epoch_start,
+            "learning_rate": current_lr,
+            "train_loss": train_metrics["train_loss"],
+            "val_loss": val_results["val_loss"],
+            "r2_score": val_results["r2"],
+            "mse": val_results["mse"],
+            "rmse": val_results["rmse"],
+            "avg_grad_norm": train_metrics["avg_grad_norm"],
+            "max_grad_norm": train_metrics["max_grad_norm"],
+            "gpu_memory_gb": memory_used,
+            "system_memory_percent": psutil.virtual_memory().percent,
+            "y_preds": val_results["y_preds"],
+            "y_trues": val_results["y_trues"]
+        }
+        
+        # Add model hyperparameters
+        epoch_results.update({
             "hidden_size": model.hidden_size,
+            "num_layers": model.num_layers,
             "dropout": model.dropout,
-            "criterion": str(model.criterion),
-            "sequence_length": train_loader.dataset.seq_len
-                               
+            "batch_size": config["batch_size"]
         })
 
-        # Training loop
-        for epoch in range(num_epochs):
-            logger.info(f"[bold yellow]Epoch {epoch+1}/{num_epochs}[/bold yellow]")
-            model.train()
-            train_loss = 0.0
-
-            for batch_idx, (x, y) in enumerate(train_loader):
-                x, y = x.to(device), y.to(device)
-
-                # Forward pass
-                y_pred = model(x)
-                loss = model.criterion(y_pred, y)
-                
-                # Backward pass and optimization
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
-
-                train_loss += loss.item()
-    
-
-            train_loss /= len(train_loader)
-            # print(f"Training Loss: {train_loss:.4f}", end="\r")
-
-            # Validation loop
-            model.eval()
-            val_loss = 0.0
-            with torch.no_grad():
-                for x, y in val_loader:
-                    x, y = x.to(device), y.to(device)
-                    y_pred = model(x)
-                    loss = model.criterion(y_pred, y)
-                    val_loss += loss.item()
-
-            val_loss /= len(val_loader)
-
-            # 🎯 Log training & validation loss
-            mlflow.log_metric("train_loss", train_loss, step=epoch)
-            mlflow.log_metric("val_loss", val_loss, step=epoch)
-
-            # Check for improvement
-            if val_loss < best_val_loss:
-                best_val_loss = val_loss
-                epochs_no_improve = 0 
-                best_model_weights = model.state_dict()
-
-                # Save the best model weights
-                logger.info(f"Best model weights saved at epoch {epoch+1} with validation loss {val_loss:.4f}")
-                # Create dynamic save path
-                current_lr = optimizer.param_groups[0]['lr']
-                # Update the filename with the current epoch and validation loss
-                filename = (
-                    f"ew_split_{split_idx:02}"
-                    f"_epoch_{epoch+1:03}"
-                    f"_model_lstm_lr_{current_lr:.6f}_loss_{val_loss:.4f}"
-                    f"_batch_{p['batch_size']}_layers_{p['num_layers']}_dropout_{p['dropout']}"
-                    f".pth")
-
-                torch.save(model.state_dict(), os.path.join(model_dir, filename))
-
-                # 🎯 Log model to MLflow
-                mlflow.pytorch.log_model(model, f"best_model_split_{split_idx}")
-
-                logger.info(f"[bold green]✅ New best model saved at epoch {epoch+1} with validation loss {val_loss:.4f}[/bold green]")
-            else:
-                epochs_no_improve += 1
-                logger.info(f"No improvement for {epochs_no_improve}/{patience} epochs.")
+        history.append(epoch_results)
+        save_artifacts(metrics_dir, split_idx, epoch, epoch_results, config)
 
 
-            logger.info(f"[bold cyan]📊 Split: {split_idx+1} | Epoch: {epoch+1} | T Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | Best Loss: {best_val_loss:.4f}[/bold cyan]")
+        # Check for improvement
+        if val_results["val_loss"] < best_val_loss:
+            best_val_loss = val_results["val_loss"]
+            epochs_no_improve = 0 
+
+            # Update the filename with the current epoch and validation loss
+            filename = (
+                f"ew_split_{split_idx:02}"
+                f"_epoch_{epoch+1:03}"
+                f"_model_lstm_lr_{current_lr:.6f}_loss_{val_results['val_loss']:.4f}"
+                f"_batch_{config['batch_size']}_layers_{config['num_layers']}_dropout_{config['dropout']}"
+                f".pth")
+
+            torch.save({
+                "model_state": model.state_dict(),
+                "optimizer": optimizer.state_dict(),
+                "h0": model.h0,
+                "c0": model.c0,
+                "X_scaler": scaler,
+                "epoch": epoch,
+                "split": split_idx,
+                "metrics": epoch_results
+                }, checkpoints_dir / f"{filename}")
+            # best_model_weights = model.state_dict().copy()
+        else:
+            epochs_no_improve += 1
             
-            # Step the scheduler
-            scheduler.step(val_loss)
 
-            # Stop training if patience is exceeded
-            if epochs_no_improve >= patience:
-            
-                logger.debug("[bold red]🛑 Early stopping triggered. Training stopped.[/bold red]")
-                break
+        logger.info(
+            f"[bold red]📊 Sp: {split_idx+1} [/bold red]| [bold green] Ep: {epoch+1} [/bold green] | "
+            f"[bold blue] TLoss: {epoch_results['train_loss']:.4f} [/bold blue] | "
+            f"[bold cyan] VLoss: {epoch_results['val_loss']:.4f} [/bold cyan] | "
+            f"[bold green] BLoss: {best_val_loss:.4f} [/bold green] | "
+            f"R2: {val_results['r2']:.4f} | "
+            f"LR: {current_lr:.2e}")
+        
+        # Step the scheduler
+        scheduler.step(val_results["val_loss"])
 
+        # Stop training if patience is exceeded
+        if epochs_no_improve >= patience:
+            logger.debug(f"[bold red]🛑 Early stopping triggered. Training stopped at epoch {epoch}.[/bold red]")
+            break
 
+    # return {"history": history,  "learning_rate" : current_lr}
+    return history
 
-    # Load best model before returning (only if it's updated)
-    if best_model_weights is not None:
-        model.load_state_dict(best_model_weights)
-    else:
-        model.load_state_dict(prev_best_weights)
-        logger.warning("No model improvements found during training.")
-
-    return model, best_model_weights, best_val_loss
 
 if __name__ == "__main__":
     
+    start_time = time.time()
+    
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    checkpoints_dir = config['experiment_dirs']['checkpoints_dir']
+    metrics_dir = config['experiment_dirs']['metrics_dir']
+
+    current_dir = Path(__file__).resolve().parent
+    project_root = current_dir.parent.parent
+    metrics_dir_path = project_root / Path(metrics_dir).relative_to("/") if metrics_dir.startswith("/") else Path(metrics_dir)
+
+    checkpoints_dir_path = project_root / Path(checkpoints_dir).relative_to("/") if checkpoints_dir.startswith("/") else Path(checkpoints_dir)
+
+    experiment_name = f"{config['experiment']['experiment_name']}"
 
     # Load train, validation, and test data
-    train_val_data = train_val_data_path()
+    raw_data = train_val_data_path(config)
+    X_df, y_df = load_and_preprocess_data(raw_data, config["data_columns"], config["seq_len"], logger)
 
-    X_train_val, y_train_val = load_and_preprocess_data(train_val_data, p["data_columns"], p["seq_len"])
+    X_raw = X_df.values
+    y_raw = y_df.values
 
-    # ✅ Scale the data BEFORE passing it to DataLoaders
-    X_train_val, y_train_val = scale_data(X_train_val, y_train_val)
-
-
-    # Initialize Expanding Window
+    # Initialize Expanding Window : horizon is the validation set in the split
     exp_window = ExpandingWindow(initial=30, horizon=28, period=28) 
-    splits = exp_window.split(X_train_val)
+    splits = exp_window.split(X_raw)  
+
+    full_history = []
+
+    # Loop through expanding window splits
+    for split_idx, (train_idx, val_idx) in enumerate(splits):
+        logger.info(f"[bold green]Processing Split {split_idx+1}/{len(splits)}[/bold green]")
+
+        # Scale data per split
+        X_train, y_train, scaler_train = scale_data(X_raw[train_idx], y_raw[train_idx])
+        X_val, y_val, _ = scale_data(X_raw[val_idx], y_raw[val_idx])
 
         # Initialize the model
-    model = LSTMRegressor(
-        n_features=p["n_features"],
-        hidden_size=p["hidden_size"],
-        criterion=p["criterion"],
-        num_layers=p["num_layers"],
-        dropout=p["dropout"],
-        learning_rate=p["learning_rate"],
-        batch_size=p["batch_size"],  
-        output_size=p["output_size"],
-
-    )
-
-    best_val_loss = float("inf")
-    best_weights = None
-    # Define device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # Loop through expanding window splits
-
-    for i, (train_idx, val_idx) in enumerate(splits):
-        logger.info(f"[bold green]Running Expanding Window {i+1}/{len(splits)}[/bold green]")
-
-        # Create train and validation sets
-        X_train, y_train = X_train_val[train_idx], y_train_val[train_idx]
-        X_val, y_val = X_train_val[val_idx], y_train_val[val_idx]
-        logger.info(f"[bold blue]Train shape: {X_train.shape}, {y_train.shape}, Val shape: {X_val.shape}, {y_val.shape}[/bold blue]")
-
+        model = LSTMRegressor(
+            n_features=config["n_features"],
+            hidden_size=config["hidden_size"],
+            criterion=config["criterion"],
+            num_layers=config["num_layers"],
+            dropout=config["dropout"],
+            learning_rate=config["learning_rate"],
+            batch_size=config["batch_size"],  
+            output_size=config["output_size"],
+        )
 
         # Create DataLoaders for this split
-        train_loader = train_dataloader(X_train, y_train, p["seq_len"], p["output_size"], p["batch_size"], p["num_workers"])
-        val_loader = val_dataloader(X_val, y_val, p["seq_len"], p["output_size"], p["batch_size"], p["num_workers"])
-
-        # Load previous model weights if available
-        if best_weights is not None:
-            model.load_state_dict(best_weights)
-            logger.info(f"[bold green]🔄 Loaded previous model weights for continued training.[/bold green]")
-
+        train_loader = train_dataloader(X_train, y_train, config["seq_len"], 
+                                        config["output_size"], config["batch_size"], 
+                                        config["num_workers"], logger)
+        val_loader = val_dataloader(X_val, y_val, config["seq_len"], 
+                                    config["output_size"], config["batch_size"], 
+                                    config["num_workers"], logger)
 
         # Train the model
-        model, best_weights, best_val_loss = run_training(model, train_loader, val_loader, num_epochs=200, device=device, split_idx=i, best_val_loss=best_val_loss )
-        # print(f"Best validation loss: {best_val_loss:.4f}")
-        # print(f"Best model weights: {best_weights}")
+        split_history = run_training(metrics_dir_path, checkpoints_dir_path, model, train_loader, 
+                                     val_loader, num_epochs=200, 
+                                     device=device, split_idx=split_idx, scaler=scaler_train)
+
+        full_history.extend(split_history)
+        torch.cuda.empty_cache()
+
+    # End the timer and calculate elapsed time
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    
+    # Save complete history
+    full_history_path = metrics_dir_path / "full_training_history.csv"
+    pd.DataFrame(full_history).to_csv(full_history_path, index=False)
+
+    logger.info(f"[bold green]Training completed in {elapsed_time / 60:.2f} minutes[/bold green]")

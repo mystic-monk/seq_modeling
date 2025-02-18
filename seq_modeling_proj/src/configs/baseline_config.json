@@ -29,16 +29,16 @@
     },
     
     "experiment_dirs": {
-        "checkpoints_dir": "../experiments/checkpoints",
-        "log_dir": "../experiments/logs",
-        "optuna_db_dir": "../experiments/optuna_studies",
-        "metrics_dir": "../experiments/metrics",
-        "mlflow_runs_dir": "../experiments/mlflow_runs"
+        "checkpoints_dir": "/experiments/checkpoints",
+        "log_dir": "/experiments/logs",
+        "optuna_db_dir": "/experiments/optuna_studies",
+        "metrics_dir": "/experiments/metrics",
+        "mlflow_runs_dir": "/experiments/mlruns"
     },
 
     "experiment": {
         "experiment_name": "LSTM_Expanding_Window",
-        "tracking_dir": "../experiments/mlflow_runs",
+        "tracking_dir": "/experiments/mlruns",
         "version": "02"
     },
     "criterion": "MSELoss"

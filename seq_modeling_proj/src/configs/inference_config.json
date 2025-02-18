@@ -1,0 +1,39 @@
+{
+    "experiment": {
+        "experiment_name": "LSTM_Expanding_Window",
+        "mlflow_runs_dir": "/experiments/mlruns",
+        "checkpoint_path": "/experiments/checkpoints/ew_split_23_epoch_002_model_lstm_lr_0.300000_loss_0.0171_batch_14_layers_3_dropout_0.26478.pth",
+        "study_name": "lstm_study",
+        "storage": "sqlite:///optuna_lstm.db"
+    },
+
+    "data": {
+        "test_data": "../../data/transformed/influenza_features_test.parquet",
+        "output_file": "../../../data/predictions/predictions.csv",
+        "data_columns": [
+            "event_creation_date", "log_cases_14d_moving_avg",
+            "lag_1d", "lag_7d", "lag_14d",
+            "weekday_sin", "annual_sin"
+        ]
+    },
+
+    "inference": {
+        "seq_len": 14,
+        "output_size": 14,
+        "batch_size": 14,
+        "num_workers": 0,
+        "forecast_days": 14,
+        "hidden_size": 128,
+        "num_layers": 3,
+        "criterion" : "MSELoss",
+        "dropout": 0.26478,
+        "max_epochs": 200,
+        "input_size": 6,
+        "learning_rate": 0.3
+    },
+    "logging": {
+        "log_dir": "/experiments/logs",
+        "log_file": "inference.log",
+        "level": "INFO"
+    }
+}

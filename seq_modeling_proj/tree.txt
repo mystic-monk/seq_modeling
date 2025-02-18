@@ -8,327 +8,20 @@ C:.
 |   
 +---experiments
 |   +---checkpoints
-|   |       ew_split_00_epoch_001_model_lstm_lr_0.300000_loss_9.0151_batch_14_layers_3_dropout_0.26478.pth
-|   |       ew_split_00_epoch_001_model_lstm_lr_0.300000_loss_9.0502_batch_14_layers_3_dropout_0.26478.pth
-|   |       ew_split_00_epoch_002_model_lstm_lr_0.300000_loss_4.8281_batch_14_layers_3_dropout_0.26478.pth
-|   |       ew_split_00_epoch_002_model_lstm_lr_0.300000_loss_4.8575_batch_14_layers_3_dropout_0.26478.pth
-|   |       ew_split_00_epoch_003_model_lstm_lr_0.300000_loss_0.3333_batch_14_layers_3_dropout_0.26478.pth
-|   |       ew_split_00_epoch_003_model_lstm_lr_0.300000_loss_0.3350_batch_14_layers_3_dropout_0.26478.pth
-|   |       ew_split_00_epoch_004_model_lstm_lr_0.300000_loss_0.1026_batch_14_layers_3_dropout_0.26478.pth
-|   |       ew_split_00_epoch_004_model_lstm_lr_0.300000_loss_0.1169_batch_14_layers_3_dropout_0.26478.pth
-|   |       ew_split_05_epoch_001_model_lstm_lr_0.300000_loss_0.0489_batch_14_layers_3_dropout_0.26478.pth
-|   |       ew_split_06_epoch_010_model_lstm_lr_0.300000_loss_0.0888_batch_14_layers_3_dropout_0.26478.pth
-|   |       ew_split_06_epoch_012_model_lstm_lr_0.300000_loss_0.0853_batch_14_layers_3_dropout_0.26478.pth
-|   |       ew_split_12_epoch_018_model_lstm_lr_0.003000_loss_0.0408_batch_14_layers_3_dropout_0.26478.pth
-|   |       ew_split_12_epoch_019_model_lstm_lr_0.003000_loss_0.0284_batch_14_layers_3_dropout_0.26478.pth
-|   |       ew_split_12_epoch_020_model_lstm_lr_0.003000_loss_0.0246_batch_14_layers_3_dropout_0.26478.pth
-|   |       ew_split_12_epoch_021_model_lstm_lr_0.003000_loss_0.0243_batch_14_layers_3_dropout_0.26478.pth
-|   |       ew_split_19_epoch_019_model_lstm_lr_0.003000_loss_0.0113_batch_14_layers_3_dropout_0.26478.pth
-|   |       ew_split_19_epoch_020_model_lstm_lr_0.003000_loss_0.0111_batch_14_layers_3_dropout_0.26478.pth
-|   |       
 |   +---logs
-|   |       training.log
-|   |       
 |   +---metrics
-|   +---mlflow_runs
-|   |   +---.trash
-|   |   \---245727688741440195
-|   |       |   meta.yaml
-|   |       |   
-|   |       +---081d51eea1034f09a668cebad66986e2
-|   |       |   |   meta.yaml
-|   |       |   |   
-|   |       |   +---artifacts
-|   |       |   +---metrics
-|   |       |   |       train_loss
-|   |       |   |       val_loss
-|   |       |   |       
-|   |       |   +---params
-|   |       |   |       batch_size
-|   |       |   |       criterion
-|   |       |   |       dropout
-|   |       |   |       hidden_size
-|   |       |   |       learning_rate
-|   |       |   |       num_layers
-|   |       |   |       sequence_length
-|   |       |   |       
-|   |       |   \---tags
-|   |       |           mlflow.runName
-|   |       |           mlflow.source.git.commit
-|   |       |           mlflow.source.name
-|   |       |           mlflow.source.type
-|   |       |           mlflow.user
-|   |       |           
-|   |       +---25682507bafb401aa3d30e04fc265937
-|   |       |   |   meta.yaml
-|   |       |   |   
-|   |       |   +---artifacts
-|   |       |   +---metrics
-|   |       |   +---params
-|   |       |   \---tags
-|   |       |           mlflow.runName
-|   |       |           mlflow.source.git.commit
-|   |       |           mlflow.source.name
-|   |       |           mlflow.source.type
-|   |       |           mlflow.user
-|   |       |           
-|   |       +---2bd3482a558646c897787a9215f55393
-|   |       |   |   meta.yaml
-|   |       |   |   
-|   |       |   +---artifacts
-|   |       |   +---metrics
-|   |       |   +---params
-|   |       |   \---tags
-|   |       |           mlflow.runName
-|   |       |           mlflow.source.git.commit
-|   |       |           mlflow.source.name
-|   |       |           mlflow.source.type
-|   |       |           mlflow.user
-|   |       |           
-|   |       +---394f983023a4428f8255955c0299486d
-|   |       |   |   meta.yaml
-|   |       |   |   
-|   |       |   +---artifacts
-|   |       |   +---metrics
-|   |       |   |       train_loss
-|   |       |   |       val_loss
-|   |       |   |       
-|   |       |   +---params
-|   |       |   |       batch_size
-|   |       |   |       criterion
-|   |       |   |       dropout
-|   |       |   |       hidden_size
-|   |       |   |       learning_rate
-|   |       |   |       num_layers
-|   |       |   |       sequence_length
-|   |       |   |       
-|   |       |   \---tags
-|   |       |           mlflow.runName
-|   |       |           mlflow.source.git.commit
-|   |       |           mlflow.source.name
-|   |       |           mlflow.source.type
-|   |       |           mlflow.user
-|   |       |           
-|   |       +---8f8a89850bae4e398249ff2681f71194
-|   |       |   |   meta.yaml
-|   |       |   |   
-|   |       |   +---artifacts
-|   |       |   +---metrics
-|   |       |   +---params
-|   |       |   \---tags
-|   |       |           mlflow.runName
-|   |       |           mlflow.source.git.commit
-|   |       |           mlflow.source.name
-|   |       |           mlflow.source.type
-|   |       |           mlflow.user
-|   |       |           
-|   |       +---94d5fed4dd344bbe9d0e7b263acc6dca
-|   |       |   |   meta.yaml
-|   |       |   |   
-|   |       |   +---artifacts
-|   |       |   +---metrics
-|   |       |   |       train_loss
-|   |       |   |       val_loss
-|   |       |   |       
-|   |       |   +---params
-|   |       |   |       batch_size
-|   |       |   |       criterion
-|   |       |   |       dropout
-|   |       |   |       hidden_size
-|   |       |   |       learning_rate
-|   |       |   |       num_layers
-|   |       |   |       sequence_length
-|   |       |   |       
-|   |       |   \---tags
-|   |       |           mlflow.runName
-|   |       |           mlflow.source.git.commit
-|   |       |           mlflow.source.name
-|   |       |           mlflow.source.type
-|   |       |           mlflow.user
-|   |       |           
-|   |       +---9b274671439a49729adf459b284436a8
-|   |       |   |   meta.yaml
-|   |       |   |   
-|   |       |   +---artifacts
-|   |       |   +---metrics
-|   |       |   |       train_loss
-|   |       |   |       val_loss
-|   |       |   |       
-|   |       |   +---params
-|   |       |   |       batch_size
-|   |       |   |       criterion
-|   |       |   |       dropout
-|   |       |   |       hidden_size
-|   |       |   |       learning_rate
-|   |       |   |       num_layers
-|   |       |   |       sequence_length
-|   |       |   |       
-|   |       |   \---tags
-|   |       |           mlflow.runName
-|   |       |           mlflow.source.git.commit
-|   |       |           mlflow.source.name
-|   |       |           mlflow.source.type
-|   |       |           mlflow.user
-|   |       |           
-|   |       +---9d2e9d4565c94a6c95561242ed57cbfd
-|   |       |   |   meta.yaml
-|   |       |   |   
-|   |       |   +---artifacts
-|   |       |   |   \---best_model_split_0
-|   |       |   |       |   conda.yaml
-|   |       |   |       |   MLmodel
-|   |       |   |       |   python_env.yaml
-|   |       |   |       |   requirements.txt
-|   |       |   |       |   
-|   |       |   |       \---data
-|   |       |   |               model.pth
-|   |       |   |               pickle_module_info.txt
-|   |       |   |               
-|   |       |   +---metrics
-|   |       |   |       train_loss
-|   |       |   |       val_loss
-|   |       |   |       
-|   |       |   +---params
-|   |       |   |       batch_size
-|   |       |   |       criterion
-|   |       |   |       dropout
-|   |       |   |       hidden_size
-|   |       |   |       learning_rate
-|   |       |   |       num_layers
-|   |       |   |       sequence_length
-|   |       |   |       
-|   |       |   \---tags
-|   |       |           mlflow.log-model.history
-|   |       |           mlflow.runName
-|   |       |           mlflow.source.git.commit
-|   |       |           mlflow.source.name
-|   |       |           mlflow.source.type
-|   |       |           mlflow.user
-|   |       |           
-|   |       +---b598eb1a85264178965e0fe9c32d73f9
-|   |       |   |   meta.yaml
-|   |       |   |   
-|   |       |   +---artifacts
-|   |       |   +---metrics
-|   |       |   |       train_loss
-|   |       |   |       val_loss
-|   |       |   |       
-|   |       |   +---params
-|   |       |   |       batch_size
-|   |       |   |       criterion
-|   |       |   |       dropout
-|   |       |   |       hidden_size
-|   |       |   |       learning_rate
-|   |       |   |       num_layers
-|   |       |   |       sequence_length
-|   |       |   |       
-|   |       |   \---tags
-|   |       |           mlflow.runName
-|   |       |           mlflow.source.git.commit
-|   |       |           mlflow.source.name
-|   |       |           mlflow.source.type
-|   |       |           mlflow.user
-|   |       |           
-|   |       +---bbb0ba28c36c42c4ae4d5ebdfcc1091b
-|   |       |   |   meta.yaml
-|   |       |   |   
-|   |       |   +---artifacts
-|   |       |   |   \---best_model_split_6
-|   |       |   |       |   conda.yaml
-|   |       |   |       |   MLmodel
-|   |       |   |       |   python_env.yaml
-|   |       |   |       |   requirements.txt
-|   |       |   |       |   
-|   |       |   |       \---data
-|   |       |   |               model.pth
-|   |       |   |               pickle_module_info.txt
-|   |       |   |               
-|   |       |   +---metrics
-|   |       |   |       train_loss
-|   |       |   |       val_loss
-|   |       |   |       
-|   |       |   +---params
-|   |       |   |       batch_size
-|   |       |   |       criterion
-|   |       |   |       dropout
-|   |       |   |       hidden_size
-|   |       |   |       learning_rate
-|   |       |   |       num_layers
-|   |       |   |       sequence_length
-|   |       |   |       
-|   |       |   \---tags
-|   |       |           mlflow.log-model.history
-|   |       |           mlflow.runName
-|   |       |           mlflow.source.git.commit
-|   |       |           mlflow.source.name
-|   |       |           mlflow.source.type
-|   |       |           mlflow.user
-|   |       |           
-|   |       +---bfadf932c6e949d3a749a85308737bfa
-|   |       |   |   meta.yaml
-|   |       |   |   
-|   |       |   +---artifacts
-|   |       |   +---metrics
-|   |       |   +---params
-|   |       |   \---tags
-|   |       |           mlflow.runName
-|   |       |           mlflow.source.git.commit
-|   |       |           mlflow.source.name
-|   |       |           mlflow.source.type
-|   |       |           mlflow.user
-|   |       |           
-|   |       +---f52121e257f74f099dc7ba1c5579c186
-|   |       |   |   meta.yaml
-|   |       |   |   
-|   |       |   +---artifacts
-|   |       |   +---metrics
-|   |       |   |       train_loss
-|   |       |   |       val_loss
-|   |       |   |       
-|   |       |   +---params
-|   |       |   |       batch_size
-|   |       |   |       criterion
-|   |       |   |       dropout
-|   |       |   |       hidden_size
-|   |       |   |       learning_rate
-|   |       |   |       num_layers
-|   |       |   |       sequence_length
-|   |       |   |       
-|   |       |   \---tags
-|   |       |           mlflow.runName
-|   |       |           mlflow.source.git.commit
-|   |       |           mlflow.source.name
-|   |       |           mlflow.source.type
-|   |       |           mlflow.user
-|   |       |           
-|   |       \---f9b032409e204017abfcde2ad422d536
-|   |           |   meta.yaml
-|   |           |   
-|   |           +---artifacts
-|   |           +---metrics
-|   |           +---params
-|   |           \---tags
-|   |                   mlflow.runName
-|   |                   mlflow.source.git.commit
-|   |                   mlflow.source.name
-|   |                   mlflow.source.type
-|   |                   mlflow.user
-|   |                   
+|   +---mlruns
 |   \---optuna_studies
-+---mlruns
-|   +---.trash
-|   +---0
-|   |       meta.yaml
-|   |       
-|   \---models
 +---notebooks
 |       test.ipynb
 |       
 +---src
 |   |   tree.txt
+|   |   __init__.py
 |   |   
 |   +---configs
 |   |       baseline_config.json
+|   |       inference_config.json
 |   |       __init__.py
 |   |       
 |   +---data_pipeline
@@ -353,9 +46,562 @@ C:.
 |   |               __init__.cpython-311.pyc
 |   |               
 |   +---inference
-|   |       inference_data_module.py
-|   |       __init__.py
-|   |       
+|   |   |   inference.py
+|   |   |   __init__.py
+|   |   |   
+|   |   \---__pycache__
+|   |           inference.cpython-311.pyc
+|   |           __init__.cpython-311.pyc
+|   |           
+|   +---mlruns
+|   |   +---.trash
+|   |   \---0
+|   |       |   meta.yaml
+|   |       |   
+|   |       +---2e5bc37bca304aeea9d28a9e633e8243
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   |   \---best_model_split_15
+|   |       |   |       |   conda.yaml
+|   |       |   |       |   MLmodel
+|   |       |   |       |   python_env.yaml
+|   |       |   |       |   requirements.txt
+|   |       |   |       |   
+|   |       |   |       \---data
+|   |       |   |               model.pth
+|   |       |   |               pickle_module_info.txt
+|   |       |   |               
+|   |       |   +---metrics
+|   |       |   |       best_val_loss
+|   |       |   |       
+|   |       |   +---params
+|   |       |   |       batch_size
+|   |       |   |       criterion
+|   |       |   |       dropout
+|   |       |   |       hidden_size
+|   |       |   |       learning_rate
+|   |       |   |       num_layers
+|   |       |   |       sequence_length
+|   |       |   |       
+|   |       |   \---tags
+|   |       |           mlflow.log-model.history
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       +---324197025153479ca57fa845ff19f6cd
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   |   \---best_model_split_2
+|   |       |   |       |   conda.yaml
+|   |       |   |       |   MLmodel
+|   |       |   |       |   python_env.yaml
+|   |       |   |       |   requirements.txt
+|   |       |   |       |   
+|   |       |   |       \---data
+|   |       |   |               model.pth
+|   |       |   |               pickle_module_info.txt
+|   |       |   |               
+|   |       |   +---metrics
+|   |       |   |       best_val_loss
+|   |       |   |       
+|   |       |   +---params
+|   |       |   |       batch_size
+|   |       |   |       criterion
+|   |       |   |       dropout
+|   |       |   |       hidden_size
+|   |       |   |       learning_rate
+|   |       |   |       num_layers
+|   |       |   |       sequence_length
+|   |       |   |       
+|   |       |   \---tags
+|   |       |           mlflow.log-model.history
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       +---3287e85c43724a8ab07640d2054edd1b
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   |   \---best_model_split_13
+|   |       |   |       |   conda.yaml
+|   |       |   |       |   MLmodel
+|   |       |   |       |   python_env.yaml
+|   |       |   |       |   requirements.txt
+|   |       |   |       |   
+|   |       |   |       \---data
+|   |       |   |               model.pth
+|   |       |   |               pickle_module_info.txt
+|   |       |   |               
+|   |       |   +---metrics
+|   |       |   |       best_val_loss
+|   |       |   |       
+|   |       |   +---params
+|   |       |   |       batch_size
+|   |       |   |       criterion
+|   |       |   |       dropout
+|   |       |   |       hidden_size
+|   |       |   |       learning_rate
+|   |       |   |       num_layers
+|   |       |   |       sequence_length
+|   |       |   |       
+|   |       |   \---tags
+|   |       |           mlflow.log-model.history
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       +---3c69d3b3f91d4f8dba786da3b9f37a45
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   |   \---best_model_split_7
+|   |       |   |       |   conda.yaml
+|   |       |   |       |   MLmodel
+|   |       |   |       |   python_env.yaml
+|   |       |   |       |   requirements.txt
+|   |       |   |       |   
+|   |       |   |       \---data
+|   |       |   |               model.pth
+|   |       |   |               pickle_module_info.txt
+|   |       |   |               
+|   |       |   +---metrics
+|   |       |   |       best_val_loss
+|   |       |   |       
+|   |       |   +---params
+|   |       |   |       batch_size
+|   |       |   |       criterion
+|   |       |   |       dropout
+|   |       |   |       hidden_size
+|   |       |   |       learning_rate
+|   |       |   |       num_layers
+|   |       |   |       sequence_length
+|   |       |   |       
+|   |       |   \---tags
+|   |       |           mlflow.log-model.history
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       +---474df61b07944c5496094a84fab1ded9
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   |   \---best_model_split_3
+|   |       |   |       |   conda.yaml
+|   |       |   |       |   MLmodel
+|   |       |   |       |   python_env.yaml
+|   |       |   |       |   requirements.txt
+|   |       |   |       |   
+|   |       |   |       \---data
+|   |       |   |               model.pth
+|   |       |   |               pickle_module_info.txt
+|   |       |   |               
+|   |       |   +---metrics
+|   |       |   |       best_val_loss
+|   |       |   |       
+|   |       |   +---params
+|   |       |   |       batch_size
+|   |       |   |       criterion
+|   |       |   |       dropout
+|   |       |   |       hidden_size
+|   |       |   |       learning_rate
+|   |       |   |       num_layers
+|   |       |   |       sequence_length
+|   |       |   |       
+|   |       |   \---tags
+|   |       |           mlflow.log-model.history
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       +---4fa466d53c42406e87a04c98c61f9816
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   |   \---best_model_split_0
+|   |       |   |       |   conda.yaml
+|   |       |   |       |   MLmodel
+|   |       |   |       |   python_env.yaml
+|   |       |   |       |   requirements.txt
+|   |       |   |       |   
+|   |       |   |       \---data
+|   |       |   |               model.pth
+|   |       |   |               pickle_module_info.txt
+|   |       |   |               
+|   |       |   +---metrics
+|   |       |   |       best_val_loss
+|   |       |   |       
+|   |       |   +---params
+|   |       |   |       batch_size
+|   |       |   |       criterion
+|   |       |   |       dropout
+|   |       |   |       hidden_size
+|   |       |   |       learning_rate
+|   |       |   |       num_layers
+|   |       |   |       sequence_length
+|   |       |   |       
+|   |       |   \---tags
+|   |       |           mlflow.log-model.history
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       +---544adb2790d34806b5ec538e034b1309
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   |   \---best_model_split_11
+|   |       |   |       |   conda.yaml
+|   |       |   |       |   MLmodel
+|   |       |   |       |   python_env.yaml
+|   |       |   |       |   requirements.txt
+|   |       |   |       |   
+|   |       |   |       \---data
+|   |       |   |               model.pth
+|   |       |   |               pickle_module_info.txt
+|   |       |   |               
+|   |       |   +---metrics
+|   |       |   |       best_val_loss
+|   |       |   |       
+|   |       |   +---params
+|   |       |   |       batch_size
+|   |       |   |       criterion
+|   |       |   |       dropout
+|   |       |   |       hidden_size
+|   |       |   |       learning_rate
+|   |       |   |       num_layers
+|   |       |   |       sequence_length
+|   |       |   |       
+|   |       |   \---tags
+|   |       |           mlflow.log-model.history
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       +---5e67580ce59c4a46ae005aa5c3c0f434
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   |   \---best_model_split_4
+|   |       |   |       |   conda.yaml
+|   |       |   |       |   MLmodel
+|   |       |   |       |   python_env.yaml
+|   |       |   |       |   requirements.txt
+|   |       |   |       |   
+|   |       |   |       \---data
+|   |       |   |               model.pth
+|   |       |   |               pickle_module_info.txt
+|   |       |   |               
+|   |       |   +---metrics
+|   |       |   |       best_val_loss
+|   |       |   |       
+|   |       |   +---params
+|   |       |   |       batch_size
+|   |       |   |       criterion
+|   |       |   |       dropout
+|   |       |   |       hidden_size
+|   |       |   |       learning_rate
+|   |       |   |       num_layers
+|   |       |   |       sequence_length
+|   |       |   |       
+|   |       |   \---tags
+|   |       |           mlflow.log-model.history
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       +---73ca1fe7ef58476ca163200745a71732
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   |   \---best_model_split_8
+|   |       |   |       |   conda.yaml
+|   |       |   |       |   MLmodel
+|   |       |   |       |   python_env.yaml
+|   |       |   |       |   requirements.txt
+|   |       |   |       |   
+|   |       |   |       \---data
+|   |       |   |               model.pth
+|   |       |   |               pickle_module_info.txt
+|   |       |   |               
+|   |       |   +---metrics
+|   |       |   |       best_val_loss
+|   |       |   |       
+|   |       |   +---params
+|   |       |   |       batch_size
+|   |       |   |       criterion
+|   |       |   |       dropout
+|   |       |   |       hidden_size
+|   |       |   |       learning_rate
+|   |       |   |       num_layers
+|   |       |   |       sequence_length
+|   |       |   |       
+|   |       |   \---tags
+|   |       |           mlflow.log-model.history
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       +---9086d0f381e44482aa44fbaf11779a7c
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   |   \---best_model_split_9
+|   |       |   |       |   conda.yaml
+|   |       |   |       |   MLmodel
+|   |       |   |       |   python_env.yaml
+|   |       |   |       |   requirements.txt
+|   |       |   |       |   
+|   |       |   |       \---data
+|   |       |   |               model.pth
+|   |       |   |               pickle_module_info.txt
+|   |       |   |               
+|   |       |   +---metrics
+|   |       |   |       best_val_loss
+|   |       |   |       
+|   |       |   +---params
+|   |       |   |       batch_size
+|   |       |   |       criterion
+|   |       |   |       dropout
+|   |       |   |       hidden_size
+|   |       |   |       learning_rate
+|   |       |   |       num_layers
+|   |       |   |       sequence_length
+|   |       |   |       
+|   |       |   \---tags
+|   |       |           mlflow.log-model.history
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       +---b511a1c86a154d14a2dd76f83f91a369
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   |   \---best_model_split_10
+|   |       |   |       |   conda.yaml
+|   |       |   |       |   MLmodel
+|   |       |   |       |   python_env.yaml
+|   |       |   |       |   requirements.txt
+|   |       |   |       |   
+|   |       |   |       \---data
+|   |       |   |               model.pth
+|   |       |   |               pickle_module_info.txt
+|   |       |   |               
+|   |       |   +---metrics
+|   |       |   |       best_val_loss
+|   |       |   |       
+|   |       |   +---params
+|   |       |   |       batch_size
+|   |       |   |       criterion
+|   |       |   |       dropout
+|   |       |   |       hidden_size
+|   |       |   |       learning_rate
+|   |       |   |       num_layers
+|   |       |   |       sequence_length
+|   |       |   |       
+|   |       |   \---tags
+|   |       |           mlflow.log-model.history
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       +---cdb77dd5878e434c8859abe4bfd6ee99
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   |   \---best_model_split_5
+|   |       |   |       |   conda.yaml
+|   |       |   |       |   MLmodel
+|   |       |   |       |   python_env.yaml
+|   |       |   |       |   requirements.txt
+|   |       |   |       |   
+|   |       |   |       \---data
+|   |       |   |               model.pth
+|   |       |   |               pickle_module_info.txt
+|   |       |   |               
+|   |       |   +---metrics
+|   |       |   |       best_val_loss
+|   |       |   |       
+|   |       |   +---params
+|   |       |   |       batch_size
+|   |       |   |       criterion
+|   |       |   |       dropout
+|   |       |   |       hidden_size
+|   |       |   |       learning_rate
+|   |       |   |       num_layers
+|   |       |   |       sequence_length
+|   |       |   |       
+|   |       |   \---tags
+|   |       |           mlflow.log-model.history
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       +---d2ea73ae0869497b8fd23a64461e7318
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   |   \---best_model_split_1
+|   |       |   |       |   conda.yaml
+|   |       |   |       |   MLmodel
+|   |       |   |       |   python_env.yaml
+|   |       |   |       |   requirements.txt
+|   |       |   |       |   
+|   |       |   |       \---data
+|   |       |   |               model.pth
+|   |       |   |               pickle_module_info.txt
+|   |       |   |               
+|   |       |   +---metrics
+|   |       |   |       best_val_loss
+|   |       |   |       
+|   |       |   +---params
+|   |       |   |       batch_size
+|   |       |   |       criterion
+|   |       |   |       dropout
+|   |       |   |       hidden_size
+|   |       |   |       learning_rate
+|   |       |   |       num_layers
+|   |       |   |       sequence_length
+|   |       |   |       
+|   |       |   \---tags
+|   |       |           mlflow.log-model.history
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       +---d9e4f1666b6d422582ea505bff04b50d
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   |   \---best_model_split_12
+|   |       |   |       |   conda.yaml
+|   |       |   |       |   MLmodel
+|   |       |   |       |   python_env.yaml
+|   |       |   |       |   requirements.txt
+|   |       |   |       |   
+|   |       |   |       \---data
+|   |       |   |               model.pth
+|   |       |   |               pickle_module_info.txt
+|   |       |   |               
+|   |       |   +---metrics
+|   |       |   |       best_val_loss
+|   |       |   |       
+|   |       |   +---params
+|   |       |   |       batch_size
+|   |       |   |       criterion
+|   |       |   |       dropout
+|   |       |   |       hidden_size
+|   |       |   |       learning_rate
+|   |       |   |       num_layers
+|   |       |   |       sequence_length
+|   |       |   |       
+|   |       |   \---tags
+|   |       |           mlflow.log-model.history
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       +---f276f33d23ec43378137856f72437ace
+|   |       |   |   meta.yaml
+|   |       |   |   
+|   |       |   +---artifacts
+|   |       |   |   \---best_model_split_6
+|   |       |   |       |   conda.yaml
+|   |       |   |       |   MLmodel
+|   |       |   |       |   python_env.yaml
+|   |       |   |       |   requirements.txt
+|   |       |   |       |   
+|   |       |   |       \---data
+|   |       |   |               model.pth
+|   |       |   |               pickle_module_info.txt
+|   |       |   |               
+|   |       |   +---metrics
+|   |       |   |       best_val_loss
+|   |       |   |       
+|   |       |   +---params
+|   |       |   |       batch_size
+|   |       |   |       criterion
+|   |       |   |       dropout
+|   |       |   |       hidden_size
+|   |       |   |       learning_rate
+|   |       |   |       num_layers
+|   |       |   |       sequence_length
+|   |       |   |       
+|   |       |   \---tags
+|   |       |           mlflow.log-model.history
+|   |       |           mlflow.runName
+|   |       |           mlflow.source.git.commit
+|   |       |           mlflow.source.name
+|   |       |           mlflow.source.type
+|   |       |           mlflow.user
+|   |       |           
+|   |       \---f447c28c68644d07ac2a500e2964bcc8
+|   |           |   meta.yaml
+|   |           |   
+|   |           +---artifacts
+|   |           |   \---best_model_split_14
+|   |           |       |   conda.yaml
+|   |           |       |   MLmodel
+|   |           |       |   python_env.yaml
+|   |           |       |   requirements.txt
+|   |           |       |   
+|   |           |       \---data
+|   |           |               model.pth
+|   |           |               pickle_module_info.txt
+|   |           |               
+|   |           +---metrics
+|   |           |       best_val_loss
+|   |           |       
+|   |           +---params
+|   |           |       batch_size
+|   |           |       criterion
+|   |           |       dropout
+|   |           |       hidden_size
+|   |           |       learning_rate
+|   |           |       num_layers
+|   |           |       sequence_length
+|   |           |       
+|   |           \---tags
+|   |                   mlflow.log-model.history
+|   |                   mlflow.runName
+|   |                   mlflow.source.git.commit
+|   |                   mlflow.source.name
+|   |                   mlflow.source.type
+|   |                   mlflow.user
+|   |                   
 |   +---models
 |   |   |   lstm.py
 |   |   |   __init__.py
@@ -368,29 +614,36 @@ C:.
 |   |   |   train.py
 |   |   |   __init__.py
 |   |   |   
-|   |   +---optuna_studies
 |   |   \---__pycache__
 |   |           train.cpython-311.pyc
 |   |           __init__.cpython-311.pyc
 |   |           
-|   \---utils
-|       |   config_loader.py
-|       |   config_setup.py
-|       |   logger.py
-|       |   logger_utils.py
-|       |   logging_setup.py
-|       |   mlflow_setup.py
-|       |   __init__.py
-|       |   
-|       \---__pycache__
-|               config_loader.cpython-311.pyc
-|               config_setup.cpython-311.pyc
-|               logger.cpython-311.pyc
-|               logger_utils.cpython-311.pyc
-|               logging_setup.cpython-311.pyc
-|               mlflow_setup.cpython-311.pyc
-|               __init__.cpython-311.pyc
-|               
+|   +---utils
+|   |   |   config_inference.py
+|   |   |   config_loader.py
+|   |   |   config_setup.py
+|   |   |   find_best_model.py
+|   |   |   logger.py
+|   |   |   logging_setup.py
+|   |   |   metrics.py
+|   |   |   mlflow_utils.py
+|   |   |   __init__.py
+|   |   |   
+|   |   \---__pycache__
+|   |           config_loader.cpython-311.pyc
+|   |           config_setup.cpython-311.pyc
+|   |           logger.cpython-311.pyc
+|   |           logger_utils.cpython-311.pyc
+|   |           logging_setup.cpython-311.pyc
+|   |           metrics.cpython-311.pyc
+|   |           mlflow_logger.cpython-311.pyc
+|   |           mlflow_setup.cpython-311.pyc
+|   |           mlflow_utils.cpython-311.pyc
+|   |           __init__.cpython-311.pyc
+|   |           
+|   \---__pycache__
+|           __init__.cpython-311.pyc
+|           
 \---tests
     |   test_config_setup.py
     |   test_logger.py

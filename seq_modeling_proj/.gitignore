@@ -164,6 +164,7 @@ cython_debug/
 
 # Project specific
 data/
+experiments/
 vx_archive/
 mlruns/
 metrics/
@@ -180,3 +181,4 @@ seq_modeling_proj/__pycache__/
 seq_modeling_proj/experiments/
 .db
 .csv
+.pth
