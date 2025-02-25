@@ -67,13 +67,18 @@ class LSTMRegressor(pl.LightningModule):
                 init.constant_(param, 0)
 
                 
-    def reset_states(self):
+    def reset_states(self, batch_size=None):
         """
         Reset hidden and cell states to zeros.
         """
-
-        self.h0 = torch.zeros(self.num_layers, self.batch_size, self.hidden_size).to(self.device)
-        self.c0 = torch.zeros(self.num_layers, self.batch_size, self.hidden_size).to(self.device)
+        if batch_size is None:
+            batch_size = self.batch_size
+        
+        if hasattr(self, "h0") and hasattr(self, "c0") and self.h0 is not None and self.c0 is not None:
+            self.h0, self.c0 = self.h0.to(self.device), self.c0.to(self.device)
+        else:
+            self.h0 = torch.zeros(self.num_layers, self.batch_size, self.hidden_size).to(self.device)
+            self.c0 = torch.zeros(self.num_layers, self.batch_size, self.hidden_size).to(self.device)
 
     def forward(self, x):
         """
@@ -81,8 +86,19 @@ class LSTMRegressor(pl.LightningModule):
         """
         if self.h0 is None or self.c0 is None:
             self.reset_states(x.size(0))
+        #     h0, c0 = self.h0, self.c0
+        # else:
+        #     h0, c0 = h0.to(x.device), c0.to(x.device)
+        
         lstm_out, (h0, c0) = self.lstm(x, (self.h0.to(x.device), self.c0.to(x.device)))
-        (self.h0, self.c0) = (h0.detach(), c0.detach())
+        # lstm_out, (h0, c0) = self.lstm(x, (h0, c0))
+        # lstm_out, (h0, c0) = self.lstm(x, (self.h0.to(x.device), self.c0.to(x.device)))
+
+        # Update hidden and cell states
+        self.h0 = h0.detach()
+        self.c0 = c0.detach()
+        
+        # Predict using the last time step's output
         y_pred = self.fc(lstm_out[:, -1])
         return y_pred
 

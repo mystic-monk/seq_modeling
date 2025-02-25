@@ -19,7 +19,7 @@
     ],
 
     "paths": {
-        "train_val_data": "../../data/transformed/influenza_features_train_val.parquet",
+        "train_val_data": "../../data/transformed/influenza_features.parquet",
         "test_data": "../../data/transformed/influenza_features_test.parquet",
         "log_file": "training.log",       
         "best_model_name": "best_model.pth",

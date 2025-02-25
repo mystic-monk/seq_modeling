@@ -19,25 +19,21 @@ from data_pipeline.preprocessing.data_preprocessing import scale_data, load_and_
 from data_pipeline.preprocessing.expanding_window import ExpandingWindow
 from utils.metrics import r2_score, mse_loss
 
-def train_one_epoch(model:LSTMRegressor, train_loader, optimizer, device):
-    """Runs one epoch of training and returns the average training loss."""
+def train_one_epoch(model, train_loader, optimizer, device, teacher_forcing_ratio=0.5):
+    """Runs one epoch of training for the encoder-decoder model."""
     model.train()
     train_loss = 0.0
-    model.reset_states()
     gradient_norms = []
 
     for x, y in train_loader:
         x, y = x.to(device), y.to(device)
 
         optimizer.zero_grad()
-        y_pred = model(x)
+        y_pred = model(x, y, teacher_forcing_ratio)  # Pass y for teacher forcing
         loss = model.criterion(y_pred, y)
         loss.backward()
         
-        # ✅ Gradient clipping (prevents exploding gradients)
-        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-
-       # Gradient monitoring
+        # Gradient monitoring
         total_norm = 0
         for p in model.parameters():
             if p.grad is not None:
@@ -48,19 +44,15 @@ def train_one_epoch(model:LSTMRegressor, train_loader, optimizer, device):
         optimizer.step()
         train_loss += loss.item()
 
-        if model.h0 is not None and model.c0 is not None:
-            model.h0 = model.h0.detach()
-            model.c0 = model.c0.detach()
-
     return {
-    "train_loss": train_loss / len(train_loader),
-    "avg_grad_norm": sum(gradient_norms) / len(gradient_norms),
-    "max_grad_norm": max(gradient_norms)
+        "train_loss": train_loss / len(train_loader),
+        "avg_grad_norm": sum(gradient_norms) / len(gradient_norms),
+        "max_grad_norm": max(gradient_norms)
     }
 
 
-def validate(model:LSTMRegressor, val_loader, device):
-    """Runs validation and returns validation loss, R2 score, MSE, and RMSE."""
+def validate(model, val_loader, device):
+    """Runs validation for the encoder-decoder model."""
     model.eval()
     val_loss = 0.0
     y_preds, y_trues = [], []
@@ -68,7 +60,7 @@ def validate(model:LSTMRegressor, val_loader, device):
     with torch.no_grad():
         for x, y in val_loader:
             x, y = x.to(device), y.to(device)
-            y_pred = model(x)
+            y_pred = model(x, None)  # No teacher forcing during validation
             loss = model.criterion(y_pred, y)
 
             val_loss += loss.item()
@@ -79,10 +71,8 @@ def validate(model:LSTMRegressor, val_loader, device):
     y_trues = torch.cat(y_trues, dim=0)
     val_loss /= len(val_loader)
 
-    # return val_loss, r2_score(y_preds, y_trues), mse_loss(y_preds, y_trues)
     return {
         "val_loss": val_loss,
-        # "r2": r2_score(y_preds, y_trues).item(),
         "mse": mse_loss(y_preds, y_trues).item(),
         "rmse": torch.sqrt(mse_loss(y_preds, y_trues)).item(),
         "y_preds": y_preds.cpu().numpy(),
@@ -125,7 +115,6 @@ def run_training(metrics_dir: str, checkpoints_dir, model:LSTMRegressor, train_l
     # Training loop
     for epoch in range(num_epochs):
         epoch_start = time.time()
-        # logger.info(f"[bold yellow]Epoch {epoch+1}/{num_epochs}[/bold yellow]")
 
         # Training phase
         train_metrics = train_one_epoch(model, train_loader, optimizer, device)
@@ -241,7 +230,7 @@ if __name__ == "__main__":
     y_raw = y_df.values
 
     # Initialize Expanding Window : horizon is the validation set in the split
-    exp_window = ExpandingWindow(initial=60, horizon=42, period=28) 
+    exp_window = ExpandingWindow(initial=30, horizon=28, period=28) 
     splits = exp_window.split(X_raw)  
 
     full_history = []
